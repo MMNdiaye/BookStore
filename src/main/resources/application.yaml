@@ -5,6 +5,10 @@ spring:
     url: ${DATABASE_URL}
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
+  jpa:
+    show-sql: true
   flyway:
     enabled: true
     locations: classpath:db/migrations
+  jwt:
+    secretKey: ${JWT_SECRET_KEY}

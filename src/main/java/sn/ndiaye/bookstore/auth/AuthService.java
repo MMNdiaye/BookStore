@@ -3,17 +3,13 @@ package sn.ndiaye.bookstore.auth;
 import jakarta.servlet.http.Cookie;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.CredentialsExpiredException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import sn.ndiaye.bookstore.users.User;
 import sn.ndiaye.bookstore.users.UserNotFoundException;
 import sn.ndiaye.bookstore.users.UserRepository;
-
-import java.time.Duration;
-import java.util.Collections;
-import java.util.Date;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -34,7 +30,7 @@ public class AuthService {
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
         var accessToken = jwtService.generateAccessToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
-        var cookie = new Cookie("refreshToken", refreshToken);
+        var cookie = new Cookie("refreshToken", refreshToken.toString());
         cookie.setHttpOnly(true);
         cookie.setPath("/auth/refresh");
         cookie.setSecure(true);
@@ -50,17 +46,14 @@ public class AuthService {
     }
 
     public JwtResponse refreshAccess(String refreshToken) {
-        if (!jwtService.validate(refreshToken))
-            throw new CredentialsExpiredException("Your session is expired.");
+        var refreshJwt = jwtService.parseToken(refreshToken);
+        if (refreshJwt.isExpired())
+            throw new BadCredentialsException("Your session is expired.");
 
-        var userId = jwtService.getUserIdFromToken(refreshToken)
-                .orElseThrow(() -> new IllegalStateException("A valid token should parse user id"));
-
-        var user = userRepository.findById(userId).orElseThrow(
-                () -> new UserNotFoundException(userId)
-        );
+        var user = userRepository.findById(refreshJwt.getUserId())
+                .orElseThrow(() -> new UserNotFoundException(refreshJwt.getUserId()));
 
         var accessToken = jwtService.generateAccessToken(user);
-        return new JwtResponse(accessToken);
+        return new JwtResponse(accessToken.toString());
     }
 }

@@ -7,6 +7,6 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class LoginResponse {
-    private String accessToken;
+    private Jwt accessToken;
     private Cookie refreshTokenCookie;
 }

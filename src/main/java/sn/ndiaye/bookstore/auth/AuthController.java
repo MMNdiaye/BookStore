@@ -5,11 +5,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.web.bind.annotation.*;
 import sn.ndiaye.bookstore.users.UserDto;
 import sn.ndiaye.bookstore.users.UserMapper;
-import sn.ndiaye.bookstore.users.UserNotFoundException;
 
 @AllArgsConstructor
 @RestController
@@ -24,7 +22,8 @@ public class AuthController {
             HttpServletResponse response
     ) {
         var loginResponse = authService.login(request);
-        var jwtResponse = new JwtResponse(loginResponse.getAccessToken());
+        var accessToken = loginResponse.getAccessToken();
+        var jwtResponse = new JwtResponse(accessToken.toString());
         response.addCookie(loginResponse.getRefreshTokenCookie());
         return ResponseEntity.ok(jwtResponse);
     }
@@ -48,8 +47,4 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    @ExceptionHandler({CredentialsExpiredException.class, UserNotFoundException.class})
-    private ResponseEntity<Void> handleRefreshFail() {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
 }

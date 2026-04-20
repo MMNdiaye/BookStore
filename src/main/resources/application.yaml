@@ -11,6 +11,6 @@ spring:
     enabled: true
     locations: classpath:db/migrations
   jwt:
-    secretKey: ${JWT_SECRET_KEY}
+    secret: ${JWT_SECRET}
     accessTokenExpirationInSeconds: 86_400 #1 day
     refreshTokenExpirationInSeconds: 604_800 #7 days

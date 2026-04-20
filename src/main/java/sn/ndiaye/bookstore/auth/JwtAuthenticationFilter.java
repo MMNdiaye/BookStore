@@ -11,19 +11,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import sn.ndiaye.bookstore.users.Role;
-import sn.ndiaye.bookstore.users.UserNotFoundException;
-import sn.ndiaye.bookstore.users.UserRepository;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 @AllArgsConstructor
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private JwtService jwtService;
-    private UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -34,22 +29,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         var token = authHeader.replace("Bearer ", "");
-        if (!jwtService.validate(token)) {
+        var jwt = jwtService.parseToken(token);
+        if (jwt.isExpired()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        var userId = jwtService.getUserIdFromToken(token)
-                .orElseThrow(() -> new IllegalStateException("Validated token should be able to parse any claim"));
-
-        var user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
 
         var authentication = new UsernamePasswordAuthenticationToken(
-                userId,
+                jwt.getUserId(),
                 null,
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                List.of(new SimpleGrantedAuthority("ROLE_" + jwt.getRole()))
         );
 
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

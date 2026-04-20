@@ -4,27 +4,33 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import sn.ndiaye.bookstore.users.User;
-
-import javax.swing.text.html.Option;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
+@AllArgsConstructor
 @Service
 public class JwtService {
-    @Value("${spring.jwt.secretKey}")
-    private String secretKey;
+    private JwtConfig jwtConfig;
 
-    public String generateToken(User user) {
+    public String generateAccessToken(User user) {
+        return generateToken(user, jwtConfig.getAccessTokenExpirationInSeconds());
+    }
+
+    public String generateRefreshToken(User user) {
+        return generateToken(user, jwtConfig.getRefreshTokenExpirationInSeconds());
+    }
+
+    private String generateToken(User user, long expirationInSeconds) {
         return Jwts
                 .builder()
                 .subject(user.getId().toString())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 600 * 1000))
-                .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .expiration(new Date(System.currentTimeMillis() + expirationInSeconds * 1000))
+                .signWith(Keys.hmacShaKeyFor(jwtConfig.getSecretKey().getBytes()))
                 .compact();
     }
 
@@ -51,7 +57,7 @@ public class JwtService {
     private Claims getClaims(String token) throws JwtException {
         return Jwts
                 .parser()
-                .verifyWith(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .verifyWith(Keys.hmacShaKeyFor(jwtConfig.getSecretKey().getBytes()))
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

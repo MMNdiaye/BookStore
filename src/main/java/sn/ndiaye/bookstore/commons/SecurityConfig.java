@@ -21,6 +21,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import sn.ndiaye.bookstore.auth.JwtAuthenticationFilter;
+import sn.ndiaye.bookstore.users.Role;
 
 @AllArgsConstructor
 @Configuration
@@ -41,7 +42,8 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(c -> c
                         .requestMatchers(HttpMethod.POST,"/users").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .build();

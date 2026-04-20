@@ -21,8 +21,7 @@ public class AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
-                        request.getPassword(),
-                        Collections.emptyList()
+                        request.getPassword()
                 )
         );
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();

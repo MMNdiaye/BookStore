@@ -19,7 +19,7 @@ public class RegisterBookRequest {
     private String author;
 
     @NotNull
-    private Long publisherId;
+    private String publisher;
 
     @NotNull
     @PastOrPresent

@@ -13,7 +13,7 @@ import java.io.IOException;
 public class LoggingFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        System.out.println("Request: " + request.getRequestURL());
+        System.out.println("Request: " + request.getMethod() + " " + request.getRequestURL());
         filterChain.doFilter(request, response);
         System.out.println("Response: " + response.getStatus());
     }

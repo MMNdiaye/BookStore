@@ -7,7 +7,7 @@ public class PublisherAlreadySavedException extends RuntimeException {
     private final String publisherName;
 
     public PublisherAlreadySavedException(String publisherName) {
-        super("This book is already saved");
+        super("This publisher is already saved");
         this.publisherName = publisherName;
     }
 }

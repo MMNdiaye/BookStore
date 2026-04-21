@@ -14,13 +14,20 @@ public class BookController {
     private BookService bookService;
 
     @GetMapping
-    public ResponseEntity<Iterable<BookDto>> getAllBooks() {
-        return null;
+    public ResponseEntity<Iterable<BookDto>> getAllBooks(
+            @RequestParam(name = "title", required = false) String title,
+            @RequestParam(name = "author", required = false) String author,
+            @RequestParam(name = "publisher", required = false) String publisher,
+            @RequestParam(name = "sort", required = false) String sortBy
+    ) {
+        var books = bookService.getAllBooks(title, author, publisher, sortBy);
+        return ResponseEntity.ok(books);
     }
 
     @GetMapping("/{bookId}")
-    public ResponseEntity<BookDto> getBook() {
-        return null;
+    public ResponseEntity<BookDto> getBook(@PathVariable("bookId") Long id) {
+        var bookDto = bookService.getBook(id);
+        return ResponseEntity.ok(bookDto);
     }
 
     @PostMapping
@@ -33,6 +40,11 @@ public class BookController {
                 .buildAndExpand(bookDto.getId()).toUri();
 
         return ResponseEntity.created(uri).body(bookDto);
+    }
+
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<Void> handleBookNotFound() {
+        return ResponseEntity.notFound().build();
     }
 
     @ExceptionHandler({BookAlreadySavedException.class,

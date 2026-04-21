@@ -3,7 +3,10 @@ package sn.ndiaye.bookstore.books;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @AllArgsConstructor
 @Service
@@ -13,8 +16,8 @@ public class BookService {
     private BookMapper bookMapper;
 
     public BookDto createBook(RegisterBookRequest request) {
-        var publisher = publisherRepository.findById(request.getPublisherId())
-                .orElseThrow(() -> new PublisherNotFoundException(request.getPublisherId()));
+        var publisher = publisherRepository.findByName(request.getPublisher())
+                .orElseThrow(() -> new PublisherNotFoundException(request.getPublisher()));
 
         var book = bookMapper.toEntity(request);
         book.setPublisher(publisher);
@@ -29,6 +32,39 @@ public class BookService {
             throw new BookAlreadySavedException(book);
 
         bookRepository.save(book);
+        return bookMapper.toDto(book);
+    }
+
+    public Iterable<BookDto> getAllBooks(String title, String author, String publisherName, String sortBy) {
+        List<String> validSort = List.of("title", "author", "publisher");
+        if (sortBy == null || !validSort.contains(sortBy))
+            sortBy = "title";
+        if (sortBy.equals("publisher"))
+            sortBy += ".name";
+
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnoreNullValues()
+                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
+
+        var publisher = publisherRepository.findByName(publisherName).orElse(null);
+        var book = Book.builder()
+                .title(title)
+                .author(author)
+                .publisher(publisher)
+                .build();
+
+        Example<Book> example = Example.of(book, matcher);
+        var sort = Sort.by(sortBy);
+        var books = bookRepository.findAll(example, sort);
+
+        return books.stream()
+                .map(bookMapper::toDto)
+                .toList();
+    }
+
+    public BookDto getBook(Long id) {
+        var book = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
         return bookMapper.toDto(book);
     }
 

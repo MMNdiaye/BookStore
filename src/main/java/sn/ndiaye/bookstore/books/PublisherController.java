@@ -3,11 +3,9 @@ package sn.ndiaye.bookstore.books;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import sn.ndiaye.bookstore.commons.ErrorDto;
 
 @AllArgsConstructor
 @RestController
@@ -24,5 +22,11 @@ public class PublisherController {
         var uri = uriBuilder.path("/publishers/{publisherId}")
                 .buildAndExpand(publisherDto.getId()).toUri();
         return ResponseEntity.created(uri).body(publisherDto);
+    }
+
+    @ExceptionHandler(PublisherAlreadySavedException.class)
+    public ResponseEntity<ErrorDto> handleAlreadySavedException(Exception exception) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorDto(exception.getMessage()));
     }
 }

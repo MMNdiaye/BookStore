@@ -9,6 +9,7 @@ import sn.ndiaye.bookstore.users.Role;
 public class BookSecurityRules implements SecurityRules {
     @Override
     public void configure(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry registry) {
-        registry.requestMatchers(HttpMethod.POST, "/users/**").hasRole(Role.ADMIN.name());
+        registry.requestMatchers(HttpMethod.POST, "/books").hasRole(Role.ADMIN.name())
+                .requestMatchers(HttpMethod.GET, "/books/**").permitAll();
     }
 }

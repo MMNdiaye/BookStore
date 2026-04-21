@@ -23,11 +23,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import sn.ndiaye.bookstore.auth.JwtAuthenticationFilter;
 import sn.ndiaye.bookstore.users.Role;
 
+import java.util.List;
+
 @AllArgsConstructor
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+    private List<SecurityRules> featuresSecurity;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -40,11 +44,10 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 response.setStatus(HttpServletResponse.SC_FORBIDDEN))
                 )
-                .authorizeHttpRequests(c -> c
-                        .requestMatchers(HttpMethod.POST,"/users").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/users/**").hasRole(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
-                        .anyRequest().authenticated()
+                .authorizeHttpRequests(c -> {
+                            featuresSecurity.forEach(security -> security.configure(c));
+                            c.anyRequest().authenticated();
+                        }
                 )
                 .build();
     }

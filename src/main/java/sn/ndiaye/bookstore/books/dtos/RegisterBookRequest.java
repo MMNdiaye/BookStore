@@ -5,6 +5,7 @@ import lombok.Data;
 import org.hibernate.validator.constraints.ISBN;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 public class RegisterBookRequest {
@@ -27,4 +28,7 @@ public class RegisterBookRequest {
 
     @Max(value = Long.MAX_VALUE)
     private Long quantity = 1L;
+
+    @Size(min = 1)
+    private Set<String> genres;
 }

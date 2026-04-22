@@ -6,9 +6,11 @@ import sn.ndiaye.bookstore.books.dtos.RegisterBookRequest;
 import sn.ndiaye.bookstore.books.dtos.UpdateBookRequest;
 import sn.ndiaye.bookstore.books.entities.Book;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = GenreMapper.class)
 public interface BookMapper {
+
     @Mapping(target = "publisher", ignore = true)
+    @Mapping(target = "genres", ignore = true)
     Book toEntity(RegisterBookRequest request);
 
     @Mapping(target = "publisher", expression = "java(book.getPublisher().getName())")

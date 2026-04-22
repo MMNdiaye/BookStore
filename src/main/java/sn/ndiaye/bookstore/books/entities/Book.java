@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -37,4 +39,16 @@ public class Book {
     @Column(name = "quantity")
     private Long quantity;
 
+    @Builder.Default
+    @ManyToMany
+    @JoinTable(
+            name = "book_genres",
+            joinColumns = @JoinColumn(name = "book_id"),
+            inverseJoinColumns = @JoinColumn(name = "genre_id")
+    )
+    private Set<Genre> genres = new HashSet<>();
+
+    public void addGenre(Genre genre) {
+        genres.add(genre);
+    }
 }

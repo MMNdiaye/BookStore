@@ -4,22 +4,23 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sn.ndiaye.bookstore.books.BookSpecs;
 import sn.ndiaye.bookstore.books.dtos.BookDto;
 import sn.ndiaye.bookstore.books.dtos.RegisterBookRequest;
 import sn.ndiaye.bookstore.books.dtos.UpdateBookRequest;
 import sn.ndiaye.bookstore.books.entities.Book;
+import sn.ndiaye.bookstore.books.entities.Genre;
 import sn.ndiaye.bookstore.books.entities.Publisher;
 import sn.ndiaye.bookstore.books.exceptions.BookAlreadySavedException;
 import sn.ndiaye.bookstore.books.exceptions.BookNotFoundException;
 import sn.ndiaye.bookstore.books.exceptions.IsbnAlreadySavedException;
-import sn.ndiaye.bookstore.books.exceptions.PublisherNotFoundException;
 import sn.ndiaye.bookstore.books.mappers.BookMapper;
-import sn.ndiaye.bookstore.books.mappers.PublisherMapper;
 import sn.ndiaye.bookstore.books.repositories.BookRepository;
-import sn.ndiaye.bookstore.books.repositories.PublisherRepository;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @AllArgsConstructor
@@ -27,11 +28,16 @@ import java.util.List;
 public class BookService {
     private BookRepository bookRepository;
     private PublisherService publisherService;
+    private GenreService genreService;
     private BookMapper bookMapper;
 
     public BookDto createBook(RegisterBookRequest request) {
-        var publisher = getPublisher(request.getPublisher());
         var book = bookMapper.toEntity(request);
+        var publisher = getPublisher(request.getPublisher());
+        for (var genreName : request.getGenres()) {
+            var genre = getGenre(genreName);
+            book.addGenre(genre);
+        }
         book.setPublisher(publisher);
 
         if (bookRepository.existsByIsbn(book.getIsbn()))
@@ -54,20 +60,15 @@ public class BookService {
         if (sortBy.equals("publisher"))
             sortBy += ".name";
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreNullValues()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
-
-        var publisher = getPublisher(publisherName);
-        var book = Book.builder()
-                .title(title)
-                .author(author)
-                .publisher(publisher)
-                .build();
-
-        Example<Book> example = Example.of(book, matcher);
+        Specification<Book> spec = Specification.unrestricted();
+        if (title != null)
+            spec = spec.and(BookSpecs.hasTitle(title));
+        if (author != null)
+            spec = spec.and(BookSpecs.hasAuthor(author));
+        if (publisherName != null)
+            spec = spec.and(BookSpecs.hasPublisher(publisherName));
         var sort = Sort.by(sortBy);
-        var books = bookRepository.findAll(example, sort);
+        var books = bookRepository.findAll(spec, sort);
 
         return books.stream()
                 .map(bookMapper::toDto)
@@ -97,4 +98,10 @@ public class BookService {
         var publisherDto = publisherService.getPublisher(name);
         return publisherService.ToEntity(publisherDto);
     }
+
+    private Genre getGenre(String genreName) {
+        var genreDto = genreService.getGenre(genreName);
+        return genreService.toEntity(genreDto);
+    }
+
 }

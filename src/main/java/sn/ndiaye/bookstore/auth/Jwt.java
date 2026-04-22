@@ -3,7 +3,7 @@ package sn.ndiaye.bookstore.auth;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.AllArgsConstructor;
-import sn.ndiaye.bookstore.users.Role;
+import sn.ndiaye.bookstore.users.entities.Role;
 
 import javax.crypto.SecretKey;
 import java.util.Date;

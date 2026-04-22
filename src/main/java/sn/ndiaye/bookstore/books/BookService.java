@@ -5,6 +5,7 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -68,4 +69,17 @@ public class BookService {
         return bookMapper.toDto(book);
     }
 
+    @Transactional
+    public BookDto update(Long id, UpdateBookRequest request) {
+        var book = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
+
+        if (request.getPublisher() != null) {
+            var publisher = publisherRepository.findByName(request.getPublisher())
+                            .orElseThrow(() -> new PublisherNotFoundException(request.getPublisher()));
+            book.setPublisher(publisher);
+        }
+        bookMapper.update(book, request);
+        return bookMapper.toDto(book);
+    }
 }

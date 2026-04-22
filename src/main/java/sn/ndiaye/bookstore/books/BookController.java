@@ -13,6 +13,18 @@ import sn.ndiaye.bookstore.commons.ErrorDto;
 public class BookController {
     private BookService bookService;
 
+    @PostMapping
+    public ResponseEntity<BookDto> registerBook(
+            @RequestBody @Valid RegisterBookRequest request,
+            UriComponentsBuilder uriBuilder
+    ) {
+        var bookDto = bookService.createBook(request);
+        var uri = uriBuilder.path("/books/{bookId}")
+                .buildAndExpand(bookDto.getId()).toUri();
+
+        return ResponseEntity.created(uri).body(bookDto);
+    }
+
     @GetMapping
     public ResponseEntity<Iterable<BookDto>> getAllBooks(
             @RequestParam(name = "title", required = false) String title,
@@ -30,16 +42,12 @@ public class BookController {
         return ResponseEntity.ok(bookDto);
     }
 
-    @PostMapping
-    public ResponseEntity<BookDto> registerBook(
-            @RequestBody @Valid RegisterBookRequest request,
-            UriComponentsBuilder uriBuilder
-    ) {
-        var bookDto = bookService.createBook(request);
-        var uri = uriBuilder.path("/books/{bookId}")
-                .buildAndExpand(bookDto.getId()).toUri();
-
-        return ResponseEntity.created(uri).body(bookDto);
+    @PatchMapping("/{bookId}")
+    public ResponseEntity<BookDto> updateBook(
+            @PathVariable("bookId") Long id,
+            @RequestBody UpdateBookRequest request) {
+        var bookDto = bookService.update(id, request);
+        return ResponseEntity.ok(bookDto);
     }
 
     @ExceptionHandler(BookNotFoundException.class)

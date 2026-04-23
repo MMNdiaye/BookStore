@@ -8,19 +8,17 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sn.ndiaye.bookstore.books.BookSpecs;
-import sn.ndiaye.bookstore.books.dtos.BookDto;
-import sn.ndiaye.bookstore.books.dtos.RegisterBookRequest;
-import sn.ndiaye.bookstore.books.dtos.UpdateBookRequest;
+import sn.ndiaye.bookstore.books.dtos.*;
 import sn.ndiaye.bookstore.books.entities.Book;
 import sn.ndiaye.bookstore.books.entities.Genre;
 import sn.ndiaye.bookstore.books.entities.Publisher;
 import sn.ndiaye.bookstore.books.exceptions.BookAlreadySavedException;
 import sn.ndiaye.bookstore.books.exceptions.BookNotFoundException;
+import sn.ndiaye.bookstore.books.exceptions.GenreNotFoundException;
 import sn.ndiaye.bookstore.books.exceptions.IsbnAlreadySavedException;
 import sn.ndiaye.bookstore.books.mappers.BookMapper;
 import sn.ndiaye.bookstore.books.repositories.BookRepository;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 
 @AllArgsConstructor
@@ -35,7 +33,7 @@ public class BookService {
         var book = bookMapper.toEntity(request);
         var publisher = getPublisher(request.getPublisher());
         for (var genreName : request.getGenres()) {
-            var genre = getGenre(genreName);
+            var genre = getGenreOrCreate(genreName);
             book.addGenre(genre);
         }
         book.setPublisher(publisher);
@@ -94,13 +92,38 @@ public class BookService {
         return bookMapper.toDto(book);
     }
 
+    @Transactional
+    public BookDto addGenresToBook(AddGenresToBookRequest request, Long bookId) {
+        var book = bookRepository.getBook(bookId)
+                .orElseThrow(() -> new BookNotFoundException(bookId));
+        for (var genreName : request.getGenres()) {
+            var genre = getGenreOrCreate(genreName);
+            book.addGenre(genre);
+        }
+        return bookMapper.toDto(book);
+    }
+
+    @Transactional
+    public BookDto removeGenreFromBook(String genreName, Long bookId) {
+        var book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(bookId));
+        book.removeGenre(genreName);
+        return bookMapper.toDto(book);
+    }
+
     private Publisher getPublisher(String name) {
         var publisherDto = publisherService.getPublisher(name);
         return publisherService.ToEntity(publisherDto);
     }
 
-    private Genre getGenre(String genreName) {
-        var genreDto = genreService.getGenre(genreName);
+    private Genre getGenreOrCreate(String genreName) {
+        GenreDto genreDto;
+        try {
+            genreDto = genreService.getGenre(genreName);
+        } catch (GenreNotFoundException e) {
+            genreDto = genreService.createGenre(new RegisterGenreRequest(genreName));
+        }
+
         return genreService.toEntity(genreDto);
     }
 

@@ -51,4 +51,12 @@ public class Book {
     public void addGenre(Genre genre) {
         genres.add(genre);
     }
+
+    public void removeGenre(String genreName) {
+        for (var genre : genres)
+            if (genreName.equals(genre.getName())) {
+                genres.remove(genre);
+                return;
+            }
+    }
 }

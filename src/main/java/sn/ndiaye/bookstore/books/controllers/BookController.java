@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sn.ndiaye.bookstore.books.dtos.AddGenresToBookRequest;
 import sn.ndiaye.bookstore.books.services.BookService;
 import org.springframework.web.util.UriComponentsBuilder;
 import sn.ndiaye.bookstore.books.dtos.BookDto;
@@ -55,6 +56,23 @@ public class BookController {
             @PathVariable("bookId") Long id,
             @RequestBody UpdateBookRequest request) {
         var bookDto = bookService.update(id, request);
+        return ResponseEntity.ok(bookDto);
+    }
+
+    @PostMapping("/{bookId}/genres")
+    public ResponseEntity<BookDto> addGenres(
+            @PathVariable("bookId") Long id,
+            @RequestBody @Valid AddGenresToBookRequest request) {
+        var bookDto = bookService.addGenresToBook(request, id);
+        return ResponseEntity.ok(bookDto);
+    }
+
+    @DeleteMapping("/{bookId}/genres/{genreName}")
+    public ResponseEntity<BookDto> removeGenre(
+            @PathVariable("bookId") Long id,
+            @PathVariable("genreName") String genre
+    ) {
+        var bookDto = bookService.removeGenreFromBook(genre, id);
         return ResponseEntity.ok(bookDto);
     }
 

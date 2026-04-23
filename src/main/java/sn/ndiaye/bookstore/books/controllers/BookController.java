@@ -5,15 +5,12 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sn.ndiaye.bookstore.books.dtos.AddGenresToBookRequest;
+import sn.ndiaye.bookstore.books.exceptions.*;
 import sn.ndiaye.bookstore.books.services.BookService;
 import org.springframework.web.util.UriComponentsBuilder;
 import sn.ndiaye.bookstore.books.dtos.BookDto;
 import sn.ndiaye.bookstore.books.dtos.RegisterBookRequest;
 import sn.ndiaye.bookstore.books.dtos.UpdateBookRequest;
-import sn.ndiaye.bookstore.books.exceptions.BookAlreadySavedException;
-import sn.ndiaye.bookstore.books.exceptions.BookNotFoundException;
-import sn.ndiaye.bookstore.books.exceptions.IsbnAlreadySavedException;
-import sn.ndiaye.bookstore.books.exceptions.PublisherNotFoundException;
 import sn.ndiaye.bookstore.commons.ErrorDto;
 
 @AllArgsConstructor
@@ -81,8 +78,11 @@ public class BookController {
         return ResponseEntity.notFound().build();
     }
 
-    @ExceptionHandler({BookAlreadySavedException.class,
-            PublisherNotFoundException.class, IsbnAlreadySavedException.class})
+    @ExceptionHandler({
+            BookAlreadySavedException.class,
+            PublisherNotFoundException.class,
+            IsbnAlreadySavedException.class,
+            DuplicatedGenreException.class})
     public ResponseEntity<ErrorDto> handleInvalidBookRequest(Exception ex) {
         return ResponseEntity.badRequest()
                 .body(new ErrorDto(ex.getMessage()));

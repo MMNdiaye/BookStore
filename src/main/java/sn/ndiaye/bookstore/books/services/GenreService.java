@@ -19,38 +19,50 @@ public class GenreService {
     private GenreMapper genreMapper;
 
     public GenreDto createGenre(RegisterGenreRequest request) {
+        var genre = createGenreEntity(request);
+        return genreMapper.toDto(genre);
+    }
+
+    public Genre createGenreEntity(RegisterGenreRequest request) {
         if (genreRepository.existsByName(request.getName()))
             throw new GenreAlreadySavedException(request.getName());
-
         var genre = genreMapper.toEntity(request);
         genreRepository.save(genre);
-        return genreMapper.toDto(genre);
+        return genre;
     }
 
     public Iterable<GenreDto> getAllGenres() {
-        var genres = genreRepository.findAll();
+        var genres = findGenreEntities();
         return genreMapper.toDtos(genres);
     }
 
+    public Iterable<Genre> findGenreEntities() {
+        return genreRepository.findAll();
+    }
+
     public GenreDto getGenre(String name) {
-        var genre = genreRepository.findByName(name)
-                .orElseThrow(() -> new GenreNotFoundException(name));
+        var genre = findGenreEntity(name);
         return genreMapper.toDto(genre);
+    }
+
+    public Genre findGenreEntity(String name) {
+        return genreRepository.findByName(name)
+                .orElseThrow(() -> new GenreNotFoundException(name));
     }
 
     @Transactional
     public GenreDto updateGenre(String name,  UpdateGenreRequest request) {
-        var genre = genreRepository.findByName(name)
-                .orElseThrow(() -> new GenreNotFoundException(name));
+        var genre = updateGenreEntity(name, request);
+        return genreMapper.toDto(genre);
+    }
 
+    @Transactional
+    public Genre updateGenreEntity(String name, UpdateGenreRequest request) {
+        var genre = findGenreEntity(name);
         if (genreRepository.existsByName(request.getName()))
             throw new GenreAlreadySavedException(request.getName());
 
         genreMapper.update(genre, request);
-        return genreMapper.toDto(genre);
-    }
-
-    public Genre toEntity(GenreDto genreDto) {
-        return genreMapper.toEntity(genreDto);
+        return genre;
     }
 }

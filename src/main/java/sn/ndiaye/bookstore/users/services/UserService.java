@@ -3,6 +3,7 @@ package sn.ndiaye.bookstore.users.services;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import sn.ndiaye.bookstore.users.entities.User;
 import sn.ndiaye.bookstore.users.mappers.UserMapper;
 import sn.ndiaye.bookstore.users.exceptions.EmailAlreadyTakenException;
 import sn.ndiaye.bookstore.users.dtos.RegisterUserRequest;
@@ -20,6 +21,11 @@ public class UserService {
     private final UserMapper userMapper;
 
     public UserDto createUser(RegisterUserRequest request) {
+        var user = createUserEntity(request);
+        return userMapper.toDto(user);
+    }
+
+    private User createUserEntity(RegisterUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail()))
             throw new EmailAlreadyTakenException(request.getEmail());
 
@@ -27,18 +33,25 @@ public class UserService {
         request.setPassword(passwordEncoder.encode(request.getPassword()));
         var user = userMapper.toEntity(request);
         userRepository.save(user);
-        return userMapper.toDto(user);
+        return user;
     }
 
     public Iterable<UserDto> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toDto)
-                .toList();
+        var users = findAllUserEntities();
+        return userMapper.toDtos(users);
+    }
+
+    public Iterable<User> findAllUserEntities() {
+        return userRepository.findAll();
     }
 
     public UserDto getUser(UUID id) {
-        var user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+        var user = findUserEntity(id);
         return userMapper.toDto(user);
+    }
+
+    private User findUserEntity(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 }

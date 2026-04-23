@@ -19,28 +19,46 @@ public class PublisherService {
     private PublisherMapper publisherMapper;
 
     public PublisherDto createPublisher(RegisterPublisherRequest request) {
+        var publisher = createPublisherEntity(request);
+        return publisherMapper.toDto(publisher);
+    }
+
+    public Publisher createPublisherEntity(RegisterPublisherRequest request) {
         if (publisherRepository.existsByName(request.getName()))
             throw new PublisherAlreadySavedException(request.getName());
 
         var publisher = publisherMapper.toEntity(request);
         publisherRepository.save(publisher);
-        return publisherMapper.toDto(publisher);
+        return publisher;
     }
 
     public PublisherDto getPublisher(String name) {
-        var publisher = publisherRepository.findByName(name)
-                .orElseThrow(() -> new PublisherNotFoundException(name));
-
+        var publisher = findPublisherEntity(name);
         return publisherMapper.toDto(publisher);
     }
 
+    public Publisher findPublisherEntity(String name) {
+        return publisherRepository.findByName(name)
+                .orElseThrow(() -> new PublisherNotFoundException(name));
+    }
+
     public Iterable<PublisherDto> getAllPublisher() {
-        var publishers = publisherRepository.findAll();
+        var publishers = findAllPublisherEntities();
         return publisherMapper.dtosOf(publishers);
+    }
+
+    public Iterable<Publisher> findAllPublisherEntities() {
+        return publisherRepository.findAll();
     }
 
     @Transactional
     public PublisherDto updatePublisher(String name, UpdatePublisherRequest request) {
+        var publisher = updatePublisherEntity(name, request);
+        return publisherMapper.toDto(publisher);
+    }
+
+    @Transactional
+    public Publisher updatePublisherEntity(String name, UpdatePublisherRequest request) {
         if (publisherRepository.existsByName(request.getName()))
             throw new PublisherAlreadySavedException(request.getName());
 
@@ -48,10 +66,6 @@ public class PublisherService {
                 .orElseThrow(() -> new PublisherNotFoundException(name));
 
         publisherMapper.update(publisher, request);
-        return publisherMapper.toDto(publisher);
-    }
-
-    public Publisher ToEntity(PublisherDto publisherDto) {
-        return publisherMapper.toEntity(publisherDto);
+        return publisher;
     }
 }

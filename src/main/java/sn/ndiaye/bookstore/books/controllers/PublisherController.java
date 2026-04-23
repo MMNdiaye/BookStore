@@ -24,7 +24,7 @@ public class PublisherController {
             @RequestBody @Valid RegisterPublisherRequest request,
             UriComponentsBuilder uriBuilder
     ) {
-        var publisherDto = publisherService.createPublisher(request);
+        PublisherDto publisherDto = publisherService.createPublisher(request);
         var uri = uriBuilder.path("/publishers/{publisherName}")
                 .buildAndExpand(publisherDto.getName()).toUri();
         return ResponseEntity.created(uri).body(publisherDto);

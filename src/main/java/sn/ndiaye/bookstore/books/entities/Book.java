@@ -59,4 +59,8 @@ public class Book {
                 return;
             }
     }
+
+    public boolean hasGenre(Genre genre) {
+        return genres.contains(genre);
+    }
 }

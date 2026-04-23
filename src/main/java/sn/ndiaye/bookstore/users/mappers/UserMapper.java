@@ -9,4 +9,5 @@ import sn.ndiaye.bookstore.users.dtos.UserDto;
 public interface UserMapper{
     User toEntity(RegisterUserRequest request);
     UserDto toDto(User user);
+    Iterable<UserDto> toDtos(Iterable<User> users);
 }

@@ -1,9 +1,8 @@
-package sn.ndiaye.bookstore.books;
+package sn.ndiaye.bookstore.books.specifications;
 
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 import sn.ndiaye.bookstore.books.entities.Book;
-import sn.ndiaye.bookstore.books.entities.Publisher;
 
 public class BookSpecs {
     public static Specification<Book> hasTitle(String title) {

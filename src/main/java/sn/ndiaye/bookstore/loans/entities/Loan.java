@@ -1,7 +1,8 @@
-package sn.ndiaye.bookstore.books.entities;
+package sn.ndiaye.bookstore.loans.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import sn.ndiaye.bookstore.books.entities.Book;
 import sn.ndiaye.bookstore.users.entities.User;
 
 import java.math.BigDecimal;
@@ -50,5 +51,9 @@ public class Loan {
         var elapsedDays = Duration.between(takenAt, LocalDateTime.now())
                 .toDays();
         return durationInDays - elapsedDays;
+    }
+
+    public boolean isDue() {
+        return getRemainingDays() <= 0;
     }
 }

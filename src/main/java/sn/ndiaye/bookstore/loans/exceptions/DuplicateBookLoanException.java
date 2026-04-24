@@ -1,4 +1,4 @@
-package sn.ndiaye.bookstore.books.exceptions;
+package sn.ndiaye.bookstore.loans.exceptions;
 
 import lombok.Getter;
 import sn.ndiaye.bookstore.books.entities.Book;

@@ -1,11 +1,10 @@
 package sn.ndiaye.bookstore.users.entities;
 
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import sn.ndiaye.bookstore.books.entities.Book;
-import sn.ndiaye.bookstore.books.entities.Loan;
+import sn.ndiaye.bookstore.loans.entities.Loan;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

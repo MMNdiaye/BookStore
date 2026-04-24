@@ -7,7 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sn.ndiaye.bookstore.books.BookSpecs;
+import sn.ndiaye.bookstore.books.specifications.BookSpecs;
 import sn.ndiaye.bookstore.books.dtos.*;
 import sn.ndiaye.bookstore.books.entities.Book;
 import sn.ndiaye.bookstore.books.entities.Genre;

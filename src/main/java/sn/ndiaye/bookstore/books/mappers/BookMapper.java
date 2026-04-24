@@ -16,6 +16,8 @@ public interface BookMapper {
     @Mapping(target = "publisher", expression = "java(book.getPublisher().getName())")
     BookDto toDto(Book book);
 
+    Iterable<BookDto> toDtos(Iterable<Book> books);
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "publisher", ignore = true)
     void update(@MappingTarget Book book, UpdateBookRequest request);

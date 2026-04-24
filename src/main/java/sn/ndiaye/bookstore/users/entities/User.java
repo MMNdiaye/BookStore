@@ -1,9 +1,14 @@
 package sn.ndiaye.bookstore.users.entities;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import sn.ndiaye.bookstore.books.entities.Book;
+import sn.ndiaye.bookstore.books.entities.Loan;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -28,4 +33,16 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", insertable = false)
     private Role role;
+
+    @OneToMany(mappedBy = "user")
+    private Set<Loan> loans = new LinkedHashSet<>();
+
+    public boolean hasLoanedBook(Book book) {
+        var bookLoanCount = loans.stream()
+                .map(Loan::getBook)
+                .map(Book::getId)
+                .filter(bookId -> bookId.equals(book.getId()))
+                .count();
+        return bookLoanCount != 0;
+    }
 }

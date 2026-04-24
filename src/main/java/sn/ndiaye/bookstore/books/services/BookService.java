@@ -28,6 +28,11 @@ public class BookService {
 
     @Transactional
     public BookDto createBook(RegisterBookRequest request) {
+        var book = createBookEntity(request);
+        return bookMapper.toDto(book);
+    }
+
+    public Book createBookEntity(RegisterBookRequest request) {
         var book = bookMapper.toEntity(request);
         var publisher = publisherService.findPublisherEntity(request.getPublisher());
 
@@ -35,7 +40,6 @@ public class BookService {
             var genre = getGenreOrCreate(genreName);
             if (book.hasGenre(genre))
                 throw new DuplicatedGenreException(genreName);
-
             book.addGenre(genre);
         }
         book.setPublisher(publisher);
@@ -47,10 +51,15 @@ public class BookService {
             throw new BookAlreadySavedException(book);
 
         bookRepository.save(book);
-        return bookMapper.toDto(book);
+        return book;
     }
 
     public Iterable<BookDto> getAllBooks(String title, String author, String publisherName, String sortBy) {
+        var books = findAllBookEntities(title, author, publisherName, sortBy);
+        return bookMapper.toDtos(books);
+    }
+
+    public List<Book> findAllBookEntities(String title, String author, String publisherName, String sortBy) {
         List<String> validSort = List.of("title", "author", "publisher");
         if (sortBy == null || !validSort.contains(sortBy))
             sortBy = "title";
@@ -66,22 +75,29 @@ public class BookService {
             spec = spec.and(BookSpecs.hasPublisher(publisherName));
         var sort = Sort.by(sortBy);
         var books = bookRepository.findAll(spec, sort);
-
-        return books.stream()
-                .map(bookMapper::toDto)
-                .toList();
+        return books;
     }
 
     public BookDto getBook(Long id) {
+        var book = findBookEntity(id);
+        return bookMapper.toDto(book);
+    }
+
+    public Book findBookEntity(Long id) {
         var book = bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
-        return bookMapper.toDto(book);
+        return book;
     }
 
     @Transactional
     public BookDto update(Long id, UpdateBookRequest request) {
-        var book = bookRepository.findById(id)
-                .orElseThrow(() -> new BookNotFoundException(id));
+        var book = updateBookEntity(id, request);
+        return bookMapper.toDto(book);
+    }
+
+    @Transactional
+    public Book updateBookEntity(Long id, UpdateBookRequest request) {
+        var book = findBookEntity(id);
 
         if (bookRepository.existsByIsbn(request.getIsbn()))
             throw new IsbnAlreadySavedException(request.getIsbn());
@@ -95,7 +111,7 @@ public class BookService {
             throw new BookAlreadySavedException(book);
 
         bookMapper.update(book, request);
-        return bookMapper.toDto(book);
+        return book;
     }
 
     @Transactional
@@ -115,8 +131,7 @@ public class BookService {
 
     @Transactional
     public BookDto removeGenreFromBook(String genreName, Long bookId) {
-        var book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new BookNotFoundException(bookId));
+        var book = findBookEntity(bookId);
 
         book.removeGenre(genreName);
         return bookMapper.toDto(book);

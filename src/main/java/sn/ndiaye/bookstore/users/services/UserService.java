@@ -25,7 +25,7 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
-    private User createUserEntity(RegisterUserRequest request) {
+    public User createUserEntity(RegisterUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail()))
             throw new EmailAlreadyTakenException(request.getEmail());
 
@@ -50,7 +50,7 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
-    private User findUserEntity(UUID id) {
+    public User findUserEntity(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
     }

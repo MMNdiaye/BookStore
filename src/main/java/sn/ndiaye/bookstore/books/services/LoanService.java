@@ -1,7 +1,6 @@
 package sn.ndiaye.bookstore.books.services;
 
 import lombok.AllArgsConstructor;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import sn.ndiaye.bookstore.auth.services.AuthService;
 import sn.ndiaye.bookstore.books.dtos.LoanDto;
@@ -21,16 +20,10 @@ public class LoanService {
     private BookService bookService;
     private AuthService authService;
     private final BigDecimal LOAN_RATE_PER_DAY = BigDecimal.valueOf(1.5);
-    private LoanMapper loanMapper;
 
-    public LoanDto createLoan(RegisterLoanRequest request) {
-        var loan = createLoanEntity(request);
-        return loanMapper.toDto(loan);
-    }
-
-    private Loan createLoanEntity(RegisterLoanRequest request) {
+    public Loan createLoan(RegisterLoanRequest request) {
         var customer = authService.getCurrentUser();
-        var book = bookService.findBookEntity(request.getBookId());
+        var book = bookService.getBook(request.getBookId());
         if (customer.hasLoanedBook(book))
             throw new DuplicateBookLoanException(book);
 

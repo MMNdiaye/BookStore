@@ -11,7 +11,6 @@ import sn.ndiaye.bookstore.books.BookSpecs;
 import sn.ndiaye.bookstore.books.dtos.*;
 import sn.ndiaye.bookstore.books.entities.Book;
 import sn.ndiaye.bookstore.books.entities.Genre;
-import sn.ndiaye.bookstore.books.entities.Publisher;
 import sn.ndiaye.bookstore.books.exceptions.*;
 import sn.ndiaye.bookstore.books.mappers.BookMapper;
 import sn.ndiaye.bookstore.books.repositories.BookRepository;
@@ -26,40 +25,32 @@ public class BookService {
     private GenreService genreService;
     private BookMapper bookMapper;
 
-    @Transactional
-    public BookDto createBook(RegisterBookRequest request) {
-        var book = createBookEntity(request);
-        return bookMapper.toDto(book);
-    }
-
-    public Book createBookEntity(RegisterBookRequest request) {
+    public Book createBook(RegisterBookRequest request) {
         var book = bookMapper.toEntity(request);
-        var publisher = publisherService.findPublisherEntity(request.getPublisher());
+        if (bookRepository.existsByIsbn(book.getIsbn())) {
+            throw new IsbnAlreadySavedException(book.getIsbn());
+        }
+
+        // Books with same properties(author + title + publisher + ...) may be a duplication mistake
+        if(existsBook(book))
+            throw new BookAlreadySavedException(book);
+
+        var publisher = publisherService.getPublisher(request.getPublisher());
+        book.setPublisher(publisher);
 
         for (var genreName : request.getGenres()) {
             var genre = getGenreOrCreate(genreName);
-            if (book.hasGenre(genre))
+            if (book.hasGenre(genre)) {
                 throw new DuplicatedGenreException(genreName);
+            }
             book.addGenre(genre);
         }
-        book.setPublisher(publisher);
-
-        if (bookRepository.existsByIsbn(book.getIsbn()))
-            throw new IsbnAlreadySavedException(book.getIsbn());
-
-        if(existsBook(book))
-            throw new BookAlreadySavedException(book);
 
         bookRepository.save(book);
         return book;
     }
 
-    public Iterable<BookDto> getAllBooks(String title, String author, String publisherName, String sortBy) {
-        var books = findAllBookEntities(title, author, publisherName, sortBy);
-        return bookMapper.toDtos(books);
-    }
-
-    public List<Book> findAllBookEntities(String title, String author, String publisherName, String sortBy) {
+    public Iterable<Book> getAllBooks(String title, String author, String publisherName, String sortBy) {
         List<String> validSort = List.of("title", "author", "publisher");
         if (sortBy == null || !validSort.contains(sortBy))
             sortBy = "title";
@@ -74,48 +65,31 @@ public class BookService {
         if (publisherName != null)
             spec = spec.and(BookSpecs.hasPublisher(publisherName));
         var sort = Sort.by(sortBy);
-        var books = bookRepository.findAll(spec, sort);
-        return books;
+        return bookRepository.findAll(spec, sort);
     }
 
-    public BookDto getBook(Long id) {
-        var book = findBookEntity(id);
-        return bookMapper.toDto(book);
-    }
 
-    public Book findBookEntity(Long id) {
-        var book = bookRepository.findById(id)
+    public Book getBook(Long id) {
+        return bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
-        return book;
     }
 
     @Transactional
-    public BookDto update(Long id, UpdateBookRequest request) {
-        var book = updateBookEntity(id, request);
-        return bookMapper.toDto(book);
-    }
-
-    @Transactional
-    public Book updateBookEntity(Long id, UpdateBookRequest request) {
-        var book = findBookEntity(id);
-
+    public Book updateBook(Long id, UpdateBookRequest request) {
+        var book = getBook(id);
         if (bookRepository.existsByIsbn(request.getIsbn()))
             throw new IsbnAlreadySavedException(request.getIsbn());
 
         if (request.getPublisher() != null) {
-            var publisher = publisherService.findPublisherEntity(request.getPublisher());
+            var publisher = publisherService.getPublisher(request.getPublisher());
             book.setPublisher(publisher);
         }
-
-        if (existsBook(book))
-            throw new BookAlreadySavedException(book);
-
         bookMapper.update(book, request);
         return book;
     }
 
     @Transactional
-    public BookDto addGenresToBook(AddGenresToBookRequest request, Long bookId) {
+    public void addGenresToBook(AddGenresToBookRequest request, Long bookId) {
         var book = bookRepository.getBook(bookId)
                 .orElseThrow(() -> new BookNotFoundException(bookId));
 
@@ -126,28 +100,25 @@ public class BookService {
 
             book.addGenre(genre);
         }
-        return bookMapper.toDto(book);
     }
 
     @Transactional
-    public BookDto removeGenreFromBook(String genreName, Long bookId) {
-        var book = findBookEntity(bookId);
-
+    public void removeGenreFromBook(String genreName, Long bookId) {
+        var book = getBook(bookId);
         book.removeGenre(genreName);
-        return bookMapper.toDto(book);
     }
 
     private Genre getGenreOrCreate(String genreName) {
         try {
-            return genreService.findGenreEntity(genreName);
+            return genreService.getGenre(genreName);
         } catch (GenreNotFoundException e) {
-            return genreService.createGenreEntity(new RegisterGenreRequest(genreName));
+            return genreService.createGenre(new RegisterGenreRequest(genreName));
         }
     }
 
     private boolean existsBook(Book book) {
         var exampleMatcher = ExampleMatcher.matching()
-                .withIgnorePaths("id", "isbn");
+                .withIgnorePaths("id", "isbn", "genres", "quantity");
         Example<Book> example = Example.of(book, exampleMatcher);
         return bookRepository.exists(example);
     }

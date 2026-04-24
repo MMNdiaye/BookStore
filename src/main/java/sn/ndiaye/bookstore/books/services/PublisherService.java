@@ -3,7 +3,6 @@ package sn.ndiaye.bookstore.books.services;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sn.ndiaye.bookstore.books.dtos.PublisherDto;
 import sn.ndiaye.bookstore.books.dtos.UpdatePublisherRequest;
 import sn.ndiaye.bookstore.books.entities.Publisher;
 import sn.ndiaye.bookstore.books.exceptions.PublisherNotFoundException;
@@ -18,12 +17,8 @@ public class PublisherService {
     private PublisherRepository publisherRepository;
     private PublisherMapper publisherMapper;
 
-    public PublisherDto createPublisher(RegisterPublisherRequest request) {
-        var publisher = createPublisherEntity(request);
-        return publisherMapper.toDto(publisher);
-    }
 
-    public Publisher createPublisherEntity(RegisterPublisherRequest request) {
+    public Publisher createPublisher(RegisterPublisherRequest request) {
         if (publisherRepository.existsByName(request.getName()))
             throw new PublisherAlreadySavedException(request.getName());
 
@@ -32,33 +27,17 @@ public class PublisherService {
         return publisher;
     }
 
-    public PublisherDto getPublisher(String name) {
-        var publisher = findPublisherEntity(name);
-        return publisherMapper.toDto(publisher);
-    }
-
-    public Publisher findPublisherEntity(String name) {
+    public Publisher getPublisher(String name) {
         return publisherRepository.findByName(name)
                 .orElseThrow(() -> new PublisherNotFoundException(name));
     }
 
-    public Iterable<PublisherDto> getAllPublisher() {
-        var publishers = findAllPublisherEntities();
-        return publisherMapper.dtosOf(publishers);
-    }
-
-    public Iterable<Publisher> findAllPublisherEntities() {
+    public Iterable<Publisher> getAllPublishers() {
         return publisherRepository.findAll();
     }
 
     @Transactional
-    public PublisherDto updatePublisher(String name, UpdatePublisherRequest request) {
-        var publisher = updatePublisherEntity(name, request);
-        return publisherMapper.toDto(publisher);
-    }
-
-    @Transactional
-    public Publisher updatePublisherEntity(String name, UpdatePublisherRequest request) {
+    public Publisher updatePublisher(String name, UpdatePublisherRequest request) {
         if (publisherRepository.existsByName(request.getName()))
             throw new PublisherAlreadySavedException(request.getName());
 

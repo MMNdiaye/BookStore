@@ -3,7 +3,6 @@ package sn.ndiaye.bookstore.books.services;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sn.ndiaye.bookstore.books.dtos.GenreDto;
 import sn.ndiaye.bookstore.books.dtos.RegisterGenreRequest;
 import sn.ndiaye.bookstore.books.dtos.UpdateGenreRequest;
 import sn.ndiaye.bookstore.books.entities.Genre;
@@ -18,47 +17,27 @@ public class GenreService {
     private GenreRepository genreRepository;
     private GenreMapper genreMapper;
 
-    public GenreDto createGenre(RegisterGenreRequest request) {
-        var genre = createGenreEntity(request);
-        return genreMapper.toDto(genre);
-    }
-
-    public Genre createGenreEntity(RegisterGenreRequest request) {
+    public Genre createGenre(RegisterGenreRequest request) {
         if (genreRepository.existsByName(request.getName()))
             throw new GenreAlreadySavedException(request.getName());
+
         var genre = genreMapper.toEntity(request);
         genreRepository.save(genre);
         return genre;
     }
 
-    public Iterable<GenreDto> getAllGenres() {
-        var genres = findGenreEntities();
-        return genreMapper.toDtos(genres);
-    }
-
-    public Iterable<Genre> findGenreEntities() {
+    public Iterable<Genre> getAllGenres() {
         return genreRepository.findAll();
     }
 
-    public GenreDto getGenre(String name) {
-        var genre = findGenreEntity(name);
-        return genreMapper.toDto(genre);
-    }
-
-    public Genre findGenreEntity(String name) {
+    public Genre getGenre(String name) {
         return genreRepository.findByName(name)
                 .orElseThrow(() -> new GenreNotFoundException(name));
     }
 
     @Transactional
-    public GenreDto updateGenre(String name,  UpdateGenreRequest request) {
-        var genre = updateGenreEntity(name, request);
-        return genreMapper.toDto(genre);
-    }
-
-    @Transactional
-    public Genre updateGenreEntity(String name, UpdateGenreRequest request) {
-        var genre = findGenreEntity(name);
+    public Genre updateGenre(String name, UpdateGenreRequest request) {
+        var genre = getGenre(name);
         if (genreRepository.existsByName(request.getName()))
             throw new GenreAlreadySavedException(request.getName());
 

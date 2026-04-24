@@ -1,6 +1,5 @@
 package sn.ndiaye.bookstore.books.mappers;
 
-import org.mapstruct.IterableMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import sn.ndiaye.bookstore.books.dtos.PublisherDto;
@@ -13,6 +12,6 @@ public interface PublisherMapper {
     PublisherDto toDto(Publisher publisher);
     Publisher toEntity(PublisherDto publisherDto);
     Publisher toEntity(RegisterPublisherRequest request);
-    Iterable<PublisherDto> dtosOf(Iterable<Publisher> publishers);
+    Iterable<PublisherDto> toDtos(Iterable<Publisher> publishers);
     void update(@MappingTarget Publisher publisher, UpdatePublisherRequest request);
 }

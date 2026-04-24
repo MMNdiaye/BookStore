@@ -5,10 +5,12 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 import sn.ndiaye.bookstore.books.dtos.LoanDto;
 import sn.ndiaye.bookstore.books.dtos.RegisterLoanRequest;
 import sn.ndiaye.bookstore.books.exceptions.BookNotFoundException;
 import sn.ndiaye.bookstore.books.exceptions.DuplicateBookLoanException;
+import sn.ndiaye.bookstore.books.mappers.LoanMapper;
 import sn.ndiaye.bookstore.books.services.LoanService;
 import sn.ndiaye.bookstore.commons.ErrorDto;
 import sn.ndiaye.bookstore.users.exceptions.UserNotFoundException;
@@ -18,12 +20,17 @@ import sn.ndiaye.bookstore.users.exceptions.UserNotFoundException;
 @RequestMapping("/loans")
 public class LoanController {
     private LoanService loanService;
+    private LoanMapper loanMapper;
 
     @PostMapping
     public ResponseEntity<LoanDto> registerLoan(
-            @RequestBody @Valid RegisterLoanRequest request) {
-        var loanDto = loanService.createLoan(request);
-        return ResponseEntity.ok(loanDto);
+            @RequestBody @Valid RegisterLoanRequest request,
+            UriComponentsBuilder uriBuilder) {
+        var loan = loanService.createLoan(request);
+        var uri = uriBuilder.path("/loans/{loanId}")
+                .buildAndExpand(loan.getId()).toUri();
+        return ResponseEntity.created(uri)
+                .body(loanMapper.toDto(loan));
     }
 
     @ExceptionHandler(UserNotFoundException.class)

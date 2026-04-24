@@ -40,7 +40,7 @@ public class Book {
     private Long quantity;
 
     @Builder.Default
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.MERGE)
     @JoinTable(
             name = "book_genres",
             joinColumns = @JoinColumn(name = "book_id"),

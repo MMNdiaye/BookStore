@@ -36,6 +36,10 @@ public class User {
     @OneToMany(mappedBy = "user")
     private Set<Loan> loans = new LinkedHashSet<>();
 
+    public boolean isAdmin() {
+        return role == Role.ADMIN;
+    }
+
     public boolean hasLoanedBook(Book book) {
         var bookLoanCount = loans.stream()
                 .map(Loan::getBook)

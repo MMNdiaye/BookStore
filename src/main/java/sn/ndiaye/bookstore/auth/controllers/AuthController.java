@@ -31,12 +31,6 @@ public class AuthController {
         return ResponseEntity.ok(jwtResponse);
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<UserDto> getProfile() {
-        var user = authService.getCurrentUser();
-        return ResponseEntity.ok(userMapper.toDto(user));
-    }
-
     @PostMapping("/refresh")
     public ResponseEntity<JwtResponse> refreshToken(
             @CookieValue String refreshToken

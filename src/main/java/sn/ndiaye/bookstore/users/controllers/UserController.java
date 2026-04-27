@@ -2,16 +2,28 @@ package sn.ndiaye.bookstore.users.controllers;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import sn.ndiaye.bookstore.auth.exceptions.UnauthenticatedUserException;
+import sn.ndiaye.bookstore.auth.services.AuthService;
 import sn.ndiaye.bookstore.commons.ErrorDto;
+import sn.ndiaye.bookstore.loans.dtos.LoanDto;
+import sn.ndiaye.bookstore.loans.dtos.RegisterLoanRequest;
+import sn.ndiaye.bookstore.loans.exceptions.LoanNotFoundException;
+import sn.ndiaye.bookstore.loans.mappers.LoanMapper;
+import sn.ndiaye.bookstore.loans.services.LoanService;
+import sn.ndiaye.bookstore.users.dtos.UserLoanDto;
 import sn.ndiaye.bookstore.users.exceptions.EmailAlreadyTakenException;
 import sn.ndiaye.bookstore.users.dtos.RegisterUserRequest;
 import sn.ndiaye.bookstore.users.dtos.UserDto;
 import sn.ndiaye.bookstore.users.exceptions.UserNotFoundException;
+import sn.ndiaye.bookstore.users.mappers.UserMapper;
 import sn.ndiaye.bookstore.users.services.UserService;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -19,29 +31,68 @@ import java.util.UUID;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final LoanService loanService;
+    private final AuthService authService;
+    private final UserMapper userMapper;
+    private final LoanMapper loanMapper;
 
     @PostMapping
     public ResponseEntity<UserDto> registerUser(
             @RequestBody @Valid RegisterUserRequest request,
             UriComponentsBuilder uriComponentsBuilder) {
-        var userDto = userService.createUser(request);
+        var user = userService.createUser(request);
         var uri = uriComponentsBuilder
                 .path("/users/{userId}")
-                .buildAndExpand(userDto.getId())
+                .buildAndExpand(user.getId())
                 .toUri();
-        return ResponseEntity.created(uri).body(userDto);
+        return ResponseEntity.created(uri)
+                .body(userMapper.toDto(user));
     }
 
     @GetMapping
-    public ResponseEntity<Iterable<UserDto>> getAllUsers() {
-        var usersDto = userService.getAllUsers();
-        return ResponseEntity.ok(usersDto);
+    public Iterable<UserDto> getAllUsers() {
+        var users = userService.getAllUsers();
+        return userMapper.toDtos(users);
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserDto> getUser(@PathVariable("userId") UUID id) {
-        var userDto = userService.getUser(id);
-        return ResponseEntity.ok(userDto);
+    public UserDto getUser(@PathVariable("userId") UUID id) {
+        var user = userService.getUser(id);
+        return userMapper.toDto(user);
+    }
+
+    @GetMapping("/me")
+    public UserDto getAuthUser() {
+        var user = authService.getCurrentUser();
+        return userMapper.toDto(user);
+    }
+
+    @PostMapping("/me/loans")
+    public ResponseEntity<UserLoanDto> registerLoan(
+            @RequestBody @Valid RegisterLoanRequest request,
+            UriComponentsBuilder uriBuilder) {
+        var loan = loanService.createLoan(request);
+        var uri = uriBuilder.path("/users/me/loans/{loanId}")
+                .buildAndExpand(loan.getId()).toUri();
+        return ResponseEntity.created(uri)
+                .body(loanMapper.toUserLoanDto(loan));
+    }
+
+    @GetMapping("/me/loans")
+    public Iterable<UserLoanDto> getAuthUserLoans() {
+        var loans = userService.getLoans();
+        return loanMapper.toUserLoanDtos(loans);
+    }
+
+    @GetMapping("/me/loans/{loanId}")
+    public UserLoanDto getAuthUserLoan(@PathVariable UUID loanId) {
+        var loan = userService.getLoan(loanId);
+        return loanMapper.toUserLoanDto(loan);
+    }
+
+    @DeleteMapping("/me/loans/{loanId}")
+    public BigDecimal endsLoan(@PathVariable UUID loanId) {
+        return userService.endsLoan(loanId);
     }
 
     @ExceptionHandler(EmailAlreadyTakenException.class)
@@ -50,8 +101,18 @@ public class UserController {
                 .body(new ErrorDto(ex.getMessage()));
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<Void> handleUserNotFound() {
+    @ExceptionHandler({UserNotFoundException.class, LoanNotFoundException.class})
+    public ResponseEntity<Void> handleResourceNotFound() {
+        return ResponseEntity.notFound().build();
+    }
+
+    @ExceptionHandler(UnauthenticatedUserException.class)
+    public ResponseEntity<Void> handeUnauthenticatedUser() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Void> handleAccessDenied() {
         return ResponseEntity.notFound().build();
     }
 }

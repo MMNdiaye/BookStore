@@ -8,6 +8,7 @@ import sn.ndiaye.bookstore.users.entities.User;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Getter
@@ -45,6 +46,16 @@ public class Loan {
 
     public BigDecimal processInitialFee() {
         return ratePerDay.multiply(BigDecimal.valueOf(durationInDays));
+    }
+
+    public BigDecimal processReturnFee() {
+        Objects.requireNonNull(initialFee);
+        if (getRemainingDays() == 0)
+            return BigDecimal.ZERO;
+        
+        // pay > 0 means the loan is returned early, pay < 0 means the loan is returned late
+        var remainingDaysPay = ratePerDay.multiply(BigDecimal.valueOf(getRemainingDays()));
+        return initialFee.subtract(remainingDaysPay);
     }
 
     public long getRemainingDays() {

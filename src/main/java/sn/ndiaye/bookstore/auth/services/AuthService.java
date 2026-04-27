@@ -11,6 +11,7 @@ import sn.ndiaye.bookstore.auth.config.JwtConfig;
 import sn.ndiaye.bookstore.auth.dtos.JwtResponse;
 import sn.ndiaye.bookstore.auth.dtos.LoginRequest;
 import sn.ndiaye.bookstore.auth.dtos.LoginResponse;
+import sn.ndiaye.bookstore.auth.exceptions.UnauthenticatedUserException;
 import sn.ndiaye.bookstore.users.entities.User;
 import sn.ndiaye.bookstore.users.exceptions.UserNotFoundException;
 import sn.ndiaye.bookstore.users.repositories.UserRepository;
@@ -46,7 +47,7 @@ public class AuthService {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         var id = (UUID) authentication.getPrincipal();
         return userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+                .orElseThrow(UnauthenticatedUserException::new);
     }
 
     public JwtResponse refreshAccess(String refreshToken) {

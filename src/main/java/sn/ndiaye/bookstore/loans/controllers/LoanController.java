@@ -6,7 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import sn.ndiaye.bookstore.auth.exceptions.UnauthenticatedUserException;
 import sn.ndiaye.bookstore.books.exceptions.BookNotFoundException;
+import sn.ndiaye.bookstore.books.exceptions.EmptyBookStockException;
 import sn.ndiaye.bookstore.commons.ErrorDto;
 import sn.ndiaye.bookstore.loans.dtos.LoanDto;
 import sn.ndiaye.bookstore.loans.dtos.RegisterLoanRequest;
@@ -67,12 +69,13 @@ public class LoanController {
         return ResponseEntity.noContent().build();
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
+    @ExceptionHandler(UnauthenticatedUserException.class)
     public ResponseEntity<Void> handleNoAuthenticatedUser() {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    @ExceptionHandler({BookNotFoundException.class, DuplicateBookLoanException.class})
+    @ExceptionHandler({BookNotFoundException.class, DuplicateBookLoanException.class,
+                        EmptyBookStockException.class})
     public ResponseEntity<ErrorDto> handleBadBookRequest(Exception exception) {
         return ResponseEntity.badRequest()
                 .body(new ErrorDto(exception.getMessage()));

@@ -63,4 +63,18 @@ public class Book {
     public boolean hasGenre(Genre genre) {
         return genres.contains(genre);
     }
+
+    public boolean hasAvailableCopies() {
+        return quantity > 0;
+    }
+
+    public void addQuantity(Long qtyToAdd) {
+        quantity+=qtyToAdd;
+    }
+
+    public void reduceQuantity(Long qtyToRemove) {
+        if (qtyToRemove > quantity)
+            throw new IllegalArgumentException("Not enough stock");
+        quantity -= qtyToRemove;
+    }
 }

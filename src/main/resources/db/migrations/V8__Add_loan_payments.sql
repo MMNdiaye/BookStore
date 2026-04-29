@@ -1,0 +1,8 @@
+CREATE TABLE loan_payments(
+    id BIGSERIAL PRIMARY KEY,
+    loan_id UUID REFERENCES loans(id) NOT NULL,
+    cost DECIMAL(10, 2) NOT NULL,
+    reason VARCHAR(255) NOT NULL,
+    status VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

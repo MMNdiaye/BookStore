@@ -8,6 +8,7 @@ import sn.ndiaye.bookstore.auth.services.AuthService;
 import sn.ndiaye.bookstore.books.exceptions.EmptyBookStockException;
 import sn.ndiaye.bookstore.books.services.BookService;
 import sn.ndiaye.bookstore.loans.dtos.UpdateLoanRequest;
+import sn.ndiaye.bookstore.loans.entities.LoanStatus;
 import sn.ndiaye.bookstore.loans.exceptions.DuplicateBookLoanException;
 import sn.ndiaye.bookstore.loans.entities.Loan;
 import sn.ndiaye.bookstore.loans.exceptions.LoanNotFoundException;
@@ -47,10 +48,9 @@ public class LoanService {
                 .durationInDays(durationInDays)
                 .takenAt(LocalDateTime.now())
                 .ratePerDay(LOAN_RATE_PER_DAY)
+                .status(LoanStatus.CONFIRMING)
                 .build();
-        loan.setInitialFee(loan.processInitialFee());
         loanRepository.save(loan);
-        book.reduceQuantity(1L);
         return loan;
     }
 

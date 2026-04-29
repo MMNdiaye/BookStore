@@ -1,0 +1,6 @@
+ALTER TABLE loans
+    ADD COLUMN status VARCHAR(255) NOT NULL,
+    ADD COLUMN ended_at TIMESTAMP;
+
+ALTER TABLE loan_payments
+DROP COLUMN status;

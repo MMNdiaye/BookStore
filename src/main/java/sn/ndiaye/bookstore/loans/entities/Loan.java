@@ -38,18 +38,22 @@ public class Loan {
     @Column(name = "duration_in_days")
     private Integer durationInDays;
 
-    @Column(name = "initial_fee")
-    private BigDecimal initialFee;
-
     @Column(name = "rate_per_day")
     private BigDecimal ratePerDay;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private LoanStatus status;
+
+    @Column(name = "ended_at")
+    private LocalDateTime endedAt;
 
     public BigDecimal processInitialFee() {
         return ratePerDay.multiply(BigDecimal.valueOf(durationInDays));
     }
 
     public BigDecimal processReturnFee() {
-        Objects.requireNonNull(initialFee);
+        var initialFee = processInitialFee();
         if (getRemainingDays() == 0)
             return BigDecimal.ZERO;
         

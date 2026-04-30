@@ -15,107 +15,64 @@ import org.springframework.transaction.annotation.Transactional;
 import sn.ndiaye.bookstore.loans.entities.Loan;
 import sn.ndiaye.bookstore.loans.entities.LoanStatus;
 import sn.ndiaye.bookstore.loans.services.LoanService;
+import sn.ndiaye.bookstore.payments.dtos.PaymentRequest;
+import sn.ndiaye.bookstore.payments.dtos.PaymentResponse;
 import sn.ndiaye.bookstore.payments.dtos.WebHookRequest;
 import sn.ndiaye.bookstore.payments.entities.LoanPayment;
 import sn.ndiaye.bookstore.payments.entities.LoanPaymentReason;
-import sn.ndiaye.bookstore.payments.exceptions.PaymentException;
+import sn.ndiaye.bookstore.payments.entities.PaymentType;
 import sn.ndiaye.bookstore.payments.repositories.LoanPaymentRepository;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
+
 
 @RequiredArgsConstructor
 @Service
 public class PaymentService {
     private final LoanPaymentRepository loanPaymentRepository;
     private final LoanService loanService;
-
-    @Value("${stripe.webhookSecretKey}")
-    private String webhookSecretKey;
+    private final PaymentGateway paymentGateway;
 
     @Transactional
-    public String createLoanCheckout(Loan loan) {
-        try {
-            var session = Session.create(getParams(loan));
-            return session.getUrl();
-        } catch (StripeException e) {
-            System.out.println(e.getMessage());
-            throw new PaymentException("Couldn't load stripe checkout");
-        }
+    public PaymentResponse createLoanCheckout(Loan loan) {
+        var paymentRequest = PaymentRequest.builder()
+                .book(loan.getBook())
+                .paymentType(PaymentType.LOAN)
+                .operation_id(loan.getId().toString())
+                .quantity(1L)
+                .unitCost(loan.processInitialFee())
+                .build();
+        return paymentGateway.createCheckout(paymentRequest);
     }
 
     @Transactional
     public void handleWebHookEvent(WebHookRequest webHookRequest) {
-        try {
-            var payload = webHookRequest.getPayload();
-            var signature = webHookRequest.getHeaders().get("stripe-signature");
-            var event = Webhook.constructEvent(payload, signature, webhookSecretKey);
-
-            switch (event.getType())  {
-                case "payment.intent.succeeded" -> {
-                    var loan = extractLoanFrom(event);
+        var data = paymentGateway.parseWebhookEvent(webHookRequest);
+        if (data == null)
+            return;
+        var paymentType = PaymentType.valueOf(data.getPaymentType());
+        switch (paymentType) {
+            case LOAN -> {
+                if (data.isSuccess()) {
+                    var loan = loanService.confirmLoan(data.getOperation_id());
                     var loanPayment = LoanPayment.builder()
                             .loan(loan)
                             .createdAt(LocalDateTime.now())
                             .reason(LoanPaymentReason.INITIAL)
-                            .cost(loan.processInitialFee())
+                            .cost(data.getCost())
                             .build();
-                    loan.setStatus(LoanStatus.STARTED);
                     loanPaymentRepository.save(loanPayment);
                 }
 
-                case "payment.intent.payment.failed" -> {
-                    var loan = extractLoanFrom(event);
-                    loan.setStatus(LoanStatus.CANCELLED);
-                }
+                else
+                    loanService.cancelLoan(data.getOperation_id());
+
             }
 
-
-        } catch (SignatureVerificationException e) {
-            throw new PaymentException("Incorrect signature");
+            case ORDER -> {}
         }
     }
 
-    private Loan extractLoanFrom(Event event) {
-        var stripeObject = event.getDataObjectDeserializer().getObject().orElseThrow(
-                () -> new PaymentException("Could not deserialize stripe object"));
-        var paymentIntent = (PaymentIntent) stripeObject;
-        var loanId = paymentIntent.getMetadata().get("loan_id");
-        return loanService.getLoan(UUID.fromString(loanId));
-    }
 
-    private static SessionCreateParams getParams(Loan loan) {
-        return SessionCreateParams.builder()
-                .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("http://example.com/success")
-                .setCancelUrl("http://example.com/cancel")
-                .setPaymentIntentData(SessionCreateParams.PaymentIntentData.builder()
-                        .putMetadata("loan_id", loan.getId().toString()).build())
-                .addLineItem(getLineItem(loan))
-                .build();
-    }
-
-    private static SessionCreateParams.LineItem getLineItem(Loan loan) {
-        return SessionCreateParams.LineItem.builder()
-                .setQuantity(1L)
-                .setPriceData(getPriceData(loan))
-                .build();
-    }
-
-    private static SessionCreateParams.LineItem.PriceData getPriceData(Loan loan) {
-        return SessionCreateParams.LineItem.PriceData.builder()
-                .setCurrency("usd")
-                .setUnitAmountDecimal(loan.processInitialFee()
-                        .multiply(BigDecimal.valueOf(100)))
-                .setProductData(getProductData(loan))
-                .build();
-    }
-
-    private static SessionCreateParams.LineItem.PriceData.ProductData getProductData(Loan loan) {
-        return SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                .setName(loan.getBook().getTitle())
-                .build();
-    }
 
 }

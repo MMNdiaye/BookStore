@@ -9,12 +9,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import sn.ndiaye.bookstore.auth.exceptions.UnauthenticatedUserException;
 import sn.ndiaye.bookstore.auth.services.AuthService;
+import sn.ndiaye.bookstore.books.exceptions.EmptyBookStockException;
 import sn.ndiaye.bookstore.commons.ErrorDto;
 import sn.ndiaye.bookstore.loans.dtos.RegisterLoanRequest;
 import sn.ndiaye.bookstore.loans.exceptions.DuplicateBookLoanException;
 import sn.ndiaye.bookstore.loans.exceptions.LoanNotFoundException;
 import sn.ndiaye.bookstore.loans.mappers.LoanMapper;
 import sn.ndiaye.bookstore.loans.services.LoanService;
+import sn.ndiaye.bookstore.payments.dtos.PaymentResponse;
 import sn.ndiaye.bookstore.payments.exceptions.PaymentException;
 import sn.ndiaye.bookstore.payments.services.PaymentService;
 import sn.ndiaye.bookstore.users.dtos.UserLoanDto;
@@ -71,17 +73,11 @@ public class UserController {
     }
 
     @PostMapping("/me/loans")
-    public String registerLoan(
+    public PaymentResponse registerLoan(
             @RequestBody @Valid RegisterLoanRequest request,
             UriComponentsBuilder uriBuilder) {
         var loan = loanService.createLoan(request);
         return paymentService.createLoanCheckout(loan);
-//
-//        var loan = loanService.createLoan(request);
-//        var uri = uriBuilder.path("/users/me/loans/{loanId}")
-//                .buildAndExpand(loan.getId()).toUri();
-//        return ResponseEntity.created(uri)
-//                .body(loanMapper.toUserLoanDto(loan));
     }
 
     @GetMapping("/me/loans")
@@ -107,8 +103,8 @@ public class UserController {
                 .body(new ErrorDto(ex.getMessage()));
     }
 
-    @ExceptionHandler(DuplicateBookLoanException.class)
-    public ResponseEntity<ErrorDto> handleDuplicateLoan(Exception ex) {
+    @ExceptionHandler({DuplicateBookLoanException.class, EmptyBookStockException.class})
+    public ResponseEntity<ErrorDto> handleInvalidLoan(Exception ex) {
         return ResponseEntity.badRequest()
                 .body(new ErrorDto(ex.getMessage()));
     }

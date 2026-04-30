@@ -19,6 +19,7 @@ import sn.ndiaye.bookstore.loans.specifications.LoanSpecs;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -51,6 +52,7 @@ public class LoanService {
                 .status(LoanStatus.CONFIRMING)
                 .build();
         loanRepository.save(loan);
+        book.reduceQuantity(1L);
         return loan;
     }
 
@@ -92,5 +94,21 @@ public class LoanService {
         loanRepository.delete(loan);
         book.addQuantity(1L);
 
+    }
+
+    @Transactional
+    public Loan confirmLoan(String operationId) {
+        var id = UUID.fromString(operationId);
+        var loan = getLoan(id);
+        loan.setStatus(LoanStatus.STARTED);
+        return loan;
+    }
+
+    @Transactional
+    public void cancelLoan(String operationId) {
+        var id = UUID.fromString(operationId);
+        var loan = getLoan(id);
+        loan.setStatus(LoanStatus.CANCELLED);
+        loan.getBook().addQuantity(1L);
     }
 }

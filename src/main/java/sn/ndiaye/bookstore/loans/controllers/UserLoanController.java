@@ -34,7 +34,7 @@ public class UserLoanController {
             @RequestBody @Valid RegisterLoanRequest request,
             UriComponentsBuilder uriBuilder) {
         var loan = loanService.createLoan(request);
-        return paymentService.createLoanCheckout(loan);
+        return paymentService.createInitialLoanCheckout(loan);
     }
 
     @GetMapping

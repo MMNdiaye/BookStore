@@ -40,7 +40,7 @@ public class User {
         return role == Role.ADMIN;
     }
 
-    public boolean hasLoanedBook(Book book) {
+    public boolean isLoaningBook(Book book) {
         var bookLoanCount = loans.stream()
                 .filter(Loan::isActive)
                 .map(Loan::getBook)

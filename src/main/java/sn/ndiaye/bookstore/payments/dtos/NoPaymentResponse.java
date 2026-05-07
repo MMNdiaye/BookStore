@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class PaymentConfirmResponse implements PaymentResponse{
+public class NoPaymentResponse implements PaymentResponse{
     private String message;
 }

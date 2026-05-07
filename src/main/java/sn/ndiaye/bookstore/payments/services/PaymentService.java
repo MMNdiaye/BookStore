@@ -23,16 +23,14 @@ public class PaymentService {
     private final PaymentGateway paymentGateway;
 
     @Transactional
-    public PaymentResponse createLoanCheckout(Loan loan) {
+    public PaymentResponse createInitialLoanCheckout(Loan loan) {
         var paymentRequest = PaymentRequest.initialLoanPayment(loan);
         return paymentGateway.createCheckout(paymentRequest);
     }
 
-
     @Transactional
     public PaymentResponse createLoanReturnCheckout(Loan loan) {
         var toPay = loan.processReturnFee();
-
         if (toPay.compareTo(BigDecimal.ZERO) < 0) {
             var paymentRequest = PaymentRequest.returnLoanPenality(loan);
             return paymentGateway.createCheckout(paymentRequest);
@@ -46,16 +44,14 @@ public class PaymentService {
                 var refundData = paymentGateway
                         .createRefund(loanPayment.getExternalPaymentId(), toPay);
                 registerLoanRefund(loan, refundData);
-                var paymentResponse =
-                        new PaymentConfirmResponse("You will be refunded" + toPay + " from early return");
+                var paymentResponse = new RefundPaymentResponse(toPay);
                 loanService.endLoan(loan.getId().toString());
                 return paymentResponse;
             }
         }
 
-
         // loan is ended on time(no payment) or couldn't find payment to refund
-        return new PaymentConfirmResponse("Returned book with success");
+        return new NoPaymentResponse("Returned book with success with no more payment.");
     }
 
     @Transactional

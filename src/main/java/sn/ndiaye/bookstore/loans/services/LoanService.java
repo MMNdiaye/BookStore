@@ -1,19 +1,20 @@
 package sn.ndiaye.bookstore.loans.services;
 
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sn.ndiaye.bookstore.auth.services.AuthService;
 import sn.ndiaye.bookstore.books.exceptions.EmptyBookStockException;
 import sn.ndiaye.bookstore.books.services.BookService;
+import sn.ndiaye.bookstore.loans.dtos.RegisterLoanRequest;
+import sn.ndiaye.bookstore.loans.entities.Loan;
 import sn.ndiaye.bookstore.loans.entities.LoanStatus;
 import sn.ndiaye.bookstore.loans.exceptions.DuplicateBookLoanException;
-import sn.ndiaye.bookstore.loans.entities.Loan;
 import sn.ndiaye.bookstore.loans.exceptions.LoanNotFoundException;
-import sn.ndiaye.bookstore.loans.mappers.LoanMapper;
 import sn.ndiaye.bookstore.loans.repositories.LoanRepository;
-import sn.ndiaye.bookstore.loans.dtos.RegisterLoanRequest;
 import sn.ndiaye.bookstore.loans.specifications.LoanSpecs;
 
 import java.math.BigDecimal;
@@ -27,14 +28,12 @@ public class LoanService {
     private BookService bookService;
     private AuthService authService;
     private final BigDecimal LOAN_RATE_PER_DAY = BigDecimal.valueOf(1.5);
-    private LoanMapper loanMapper;
 
     @Transactional
     public Loan createLoan(RegisterLoanRequest request) {
         var customer = authService.getCurrentUser();
         var book = bookService.getBook(request.getBookId());
-
-        if (customer.hasLoanedBook(book))
+        if (customer.isLoaningBook(book))
             throw new DuplicateBookLoanException(book);
 
         if (!book.hasAvailableCopies())
@@ -44,11 +43,18 @@ public class LoanService {
         var loan = Loan.builder()
                 .user(customer)
                 .book(book)
-                .durationInDays(durationInDays)
-                .takenAt(LocalDateTime.now())
-                .ratePerDay(LOAN_RATE_PER_DAY)
                 .status(LoanStatus.CONFIRMING)
                 .build();
+        var existingLoan = findExistingConfirmingLoan(loan);
+        if (existingLoan != null)
+            return existingLoan;
+
+        loan.setUser(customer);
+        loan.setBook(book);
+        loan.setDurationInDays(durationInDays);
+        loan.setTakenAt(LocalDateTime.now());
+        loan.setRatePerDay(LOAN_RATE_PER_DAY);
+        loan.setStatus(LoanStatus.CONFIRMING);
         loanRepository.save(loan);
         book.reduceQuantity(1L);
         return loan;
@@ -112,5 +118,12 @@ public class LoanService {
         loan.setEndedAt(LocalDateTime.now());
         loan.getBook().addQuantity(1L);
         return loan;
+    }
+
+    private Loan findExistingConfirmingLoan(Loan loan) {
+        var matcher = ExampleMatcher.matching()
+                .withIgnoreNullValues();
+        Example<Loan> loanExample = Example.of(loan, matcher);
+        return loanRepository.findAll(loanExample).getFirst();
     }
 }

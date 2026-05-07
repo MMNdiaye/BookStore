@@ -40,10 +40,10 @@ public class StripePaymentGateway implements PaymentGateway {
             var event = Webhook.constructEvent(request.getPayload(), signature, webhookSecretKey);
             return switch (event.getType()) {
                 case "payment_intent.succeeded" ->
-                        getPaymentData(event, true);
+                        createPaymentData(event, true);
 
                 case "payment_intent.payment_failed" ->
-                        getPaymentData(event, false);
+                        createPaymentData(event, false);
 
                 default -> null;
             };
@@ -55,7 +55,7 @@ public class StripePaymentGateway implements PaymentGateway {
 
     }
 
-    private PaymentData getPaymentData(Event event, boolean hasSucceeded) {
+    private PaymentData createPaymentData(Event event, boolean hasSucceeded) {
         var stripeObject = event.getDataObjectDeserializer().getObject()
                 .orElseThrow(() -> new PaymentException("Couldn't deserialize stripe object"));
         var paymentIntent = (PaymentIntent) stripeObject;
@@ -94,8 +94,7 @@ public class StripePaymentGateway implements PaymentGateway {
         return PaymentProvider.STRIPE;
     }
 
-    private static SessionCreateParams getParams(PaymentRequest request) {
-
+    private SessionCreateParams getParams(PaymentRequest request) {
         return SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl("http://example.com/success")
@@ -105,21 +104,21 @@ public class StripePaymentGateway implements PaymentGateway {
                 .build();
     }
 
-    private static SessionCreateParams.PaymentIntentData getPaymentIntentData(PaymentRequest request) {
+    private SessionCreateParams.PaymentIntentData getPaymentIntentData(PaymentRequest request) {
         return SessionCreateParams.PaymentIntentData.builder()
                 .putMetadata("operation_id", request.getOperationId())
                 .putMetadata("type", request.getType())
                 .build();
     }
 
-    private static SessionCreateParams.LineItem getLineItem(PaymentRequest request) {
+    private SessionCreateParams.LineItem getLineItem(PaymentRequest request) {
         return SessionCreateParams.LineItem.builder()
                 .setPriceData(getPriceData(request))
                 .setQuantity(request.getQuantity())
                 .build();
     }
 
-    private static SessionCreateParams.LineItem.PriceData getPriceData(PaymentRequest request) {
+    private SessionCreateParams.LineItem.PriceData getPriceData(PaymentRequest request) {
         return SessionCreateParams.LineItem.PriceData.builder()
                 .setProductData(getProductData(request))
                 .setCurrency("usd")
@@ -127,7 +126,7 @@ public class StripePaymentGateway implements PaymentGateway {
                 .build();
     }
 
-    private static SessionCreateParams.LineItem.PriceData.ProductData getProductData(PaymentRequest request) {
+    private SessionCreateParams.LineItem.PriceData.ProductData getProductData(PaymentRequest request) {
         return SessionCreateParams.LineItem.PriceData.ProductData.builder()
                 .setName(request.getBookName())
                 .build();

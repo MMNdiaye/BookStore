@@ -104,11 +104,22 @@ public class LoanService {
         return loan;
     }
 
+
     @Transactional
     public void cancelLoan(String operationId) {
         var id = UUID.fromString(operationId);
         var loan = getLoan(id);
         loan.setStatus(LoanStatus.CANCELLED);
         loan.getBook().addQuantity(1L);
+    }
+
+    @Transactional
+    public Loan endLoan(String operationId) {
+        var id = UUID.fromString(operationId);
+        var loan = getLoan(id);
+        loan.setStatus(LoanStatus.ENDED);
+        loan.setEndedAt(LocalDateTime.now());
+        loan.getBook().addQuantity(1L);
+        return loan;
     }
 }

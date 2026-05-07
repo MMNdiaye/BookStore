@@ -93,8 +93,14 @@ public class UserController {
     }
 
     @DeleteMapping("/me/loans/{loanId}")
-    public BigDecimal endsUserLoan(@PathVariable UUID loanId) {
-        return userService.endsLoan(loanId);
+    public ResponseEntity<PaymentResponse> endsUserLoan(@PathVariable UUID loanId) {
+        var loan = userService.getLoan(loanId);
+        var paymentResponse = paymentService.createLoanReturnCheckout(loan);
+
+        if (paymentResponse == null)
+            return ResponseEntity.noContent().build();
+
+        return ResponseEntity.ok(paymentResponse);
     }
 
     @ExceptionHandler(EmailAlreadyTakenException.class)

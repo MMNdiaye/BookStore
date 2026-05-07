@@ -33,4 +33,11 @@ public class LoanPayment {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider")
+    private PaymentProvider provider;
+
+    @Column(name = "external_payment_id")
+    private String externalPaymentId;
 }

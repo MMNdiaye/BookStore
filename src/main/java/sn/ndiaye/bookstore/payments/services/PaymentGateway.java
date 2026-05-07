@@ -1,11 +1,13 @@
 package sn.ndiaye.bookstore.payments.services;
 
-import sn.ndiaye.bookstore.payments.dtos.PaymentRequest;
-import sn.ndiaye.bookstore.payments.dtos.PaymentResponse;
-import sn.ndiaye.bookstore.payments.dtos.WebHookRequest;
-import sn.ndiaye.bookstore.payments.dtos.PaymentData;
+import sn.ndiaye.bookstore.payments.dtos.*;
+import sn.ndiaye.bookstore.payments.entities.PaymentProvider;
+
+import java.math.BigDecimal;
 
 public interface PaymentGateway {
     PaymentResponse createCheckout(PaymentRequest request);
     PaymentData parseWebhookEvent(WebHookRequest request);
+    RefundData createRefund(String externalPaymentId, BigDecimal amount);
+    PaymentProvider getProvider();
 }

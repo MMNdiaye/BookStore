@@ -1,10 +1,15 @@
 package sn.ndiaye.bookstore.payments.dtos;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class PaymentResponse {
     private String url;
+    private String message;
+
+    public PaymentResponse(String url) {
+        this.url = url;
+    }
 }

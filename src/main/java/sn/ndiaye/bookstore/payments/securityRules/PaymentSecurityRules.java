@@ -9,6 +9,6 @@ import sn.ndiaye.bookstore.commons.SecurityRules;
 public class PaymentSecurityRules implements SecurityRules {
     @Override
     public void configure(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry registry) {
-        registry.requestMatchers("/payments/loan/webhook").permitAll();
+        registry.requestMatchers("/payments/webhook").permitAll();
     }
 }

@@ -4,15 +4,15 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
+import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import sn.ndiaye.bookstore.payments.dtos.PaymentRequest;
-import sn.ndiaye.bookstore.payments.dtos.PaymentResponse;
-import sn.ndiaye.bookstore.payments.dtos.WebHookRequest;
-import sn.ndiaye.bookstore.payments.dtos.PaymentData;
+import sn.ndiaye.bookstore.payments.dtos.*;
+import sn.ndiaye.bookstore.payments.entities.PaymentProvider;
 import sn.ndiaye.bookstore.payments.exceptions.PaymentException;
 
 import java.math.BigDecimal;
@@ -49,22 +49,49 @@ public class StripePaymentGateway implements PaymentGateway {
             };
 
         } catch (SignatureVerificationException e) {
-            throw new PaymentException("Incorrect stripe signature");
+            System.out.println(e.getMessage());
+            throw new PaymentException("Incorrect stripe signature or webhook key");
         }
 
     }
 
-    private static PaymentData getPaymentData(Event event, boolean hasSucceeded) {
+    private PaymentData getPaymentData(Event event, boolean hasSucceeded) {
         var stripeObject = event.getDataObjectDeserializer().getObject()
                 .orElseThrow(() -> new PaymentException("Couldn't deserialize stripe object"));
         var paymentIntent = (PaymentIntent) stripeObject;
         var metadata = paymentIntent.getMetadata();
         return PaymentData.builder()
-                .operation_id(metadata.get("operation_id"))
+                .operationId(metadata.get("operation_id"))
                 .paymentType(metadata.get("type"))
                 .cost(BigDecimal.valueOf(paymentIntent.getAmount()).divide(BigDecimal.valueOf(100)))
                 .success(hasSucceeded)
+                .provider(getProvider())
+                .externalPaymentId(paymentIntent.getId())
                 .build();
+    }
+
+    @Override
+    public RefundData createRefund(String externalPaymentId, BigDecimal amount) {
+        var refundParams = RefundCreateParams.builder()
+                .setPaymentIntent(externalPaymentId)
+                .setAmount(amount.multiply(BigDecimal.valueOf(100)).longValue())
+                .build();
+        try {
+            var refund = Refund.create(refundParams);
+            return RefundData.builder()
+                    .refundId(refund.getId())
+                    .amount(amount)
+                    .provider(getProvider())
+                    .build();
+        } catch (StripeException e) {
+            System.out.println(e.getMessage());
+            throw new PaymentException("Couldn't create refund");
+        }
+    }
+
+    @Override
+    public PaymentProvider getProvider() {
+        return PaymentProvider.STRIPE;
     }
 
     private static SessionCreateParams getParams(PaymentRequest request) {
@@ -80,7 +107,7 @@ public class StripePaymentGateway implements PaymentGateway {
 
     private static SessionCreateParams.PaymentIntentData getPaymentIntentData(PaymentRequest request) {
         return SessionCreateParams.PaymentIntentData.builder()
-                .putMetadata("operation_id", request.getOperation_id())
+                .putMetadata("operation_id", request.getOperationId())
                 .putMetadata("type", request.getType())
                 .build();
     }

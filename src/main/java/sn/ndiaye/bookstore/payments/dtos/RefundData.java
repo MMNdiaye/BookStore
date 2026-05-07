@@ -3,20 +3,16 @@ package sn.ndiaye.bookstore.payments.dtos;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import sn.ndiaye.bookstore.loans.entities.Loan;
 import sn.ndiaye.bookstore.payments.entities.PaymentProvider;
 
 import java.math.BigDecimal;
 
-@Data
-@Builder
 @AllArgsConstructor
-@NoArgsConstructor
-public class PaymentData {
-    private String operationId;
-    private String paymentType;
-    private BigDecimal cost;
-    private boolean success;
+@Builder
+@Data
+public class RefundData {
+    private BigDecimal amount;
+    private String refundId;
     private PaymentProvider provider;
-    private String externalPaymentId;
 }

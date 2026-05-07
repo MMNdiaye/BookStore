@@ -1,28 +1,17 @@
 package sn.ndiaye.bookstore.payments.services;
 
-import com.stripe.exception.SignatureVerificationException;
-import com.stripe.exception.StripeException;
-import com.stripe.model.Event;
-import com.stripe.model.PaymentIntent;
-import com.stripe.model.checkout.Session;
-import com.stripe.net.Webhook;
-import com.stripe.param.checkout.SessionCreateParams;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sn.ndiaye.bookstore.loans.entities.Loan;
-import sn.ndiaye.bookstore.loans.entities.LoanStatus;
 import sn.ndiaye.bookstore.loans.services.LoanService;
-import sn.ndiaye.bookstore.payments.dtos.PaymentRequest;
-import sn.ndiaye.bookstore.payments.dtos.PaymentResponse;
-import sn.ndiaye.bookstore.payments.dtos.WebHookRequest;
+import sn.ndiaye.bookstore.payments.dtos.*;
 import sn.ndiaye.bookstore.payments.entities.LoanPayment;
 import sn.ndiaye.bookstore.payments.entities.LoanPaymentReason;
 import sn.ndiaye.bookstore.payments.entities.PaymentType;
 import sn.ndiaye.bookstore.payments.repositories.LoanPaymentRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 
@@ -35,14 +24,40 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse createLoanCheckout(Loan loan) {
-        var paymentRequest = PaymentRequest.builder()
-                .book(loan.getBook())
-                .paymentType(PaymentType.LOAN)
-                .operation_id(loan.getId().toString())
-                .quantity(1L)
-                .unitCost(loan.processInitialFee())
-                .build();
+        var paymentRequest = PaymentRequest.initialLoanPayment(loan);
         return paymentGateway.createCheckout(paymentRequest);
+    }
+
+
+    @Transactional
+    public PaymentResponse createLoanReturnCheckout(Loan loan) {
+        var toPay = loan.processReturnFee();
+
+        if (toPay.compareTo(BigDecimal.ZERO) < 0) {
+            var paymentRequest = PaymentRequest.returnLoanPenality(loan);
+            return paymentGateway.createCheckout(paymentRequest);
+        }
+
+        if (toPay.compareTo(BigDecimal.ZERO) > 0) {
+            var loanPayment = loanPaymentRepository
+                    .findByLoanAndReason(loan, LoanPaymentReason.INITIAL)
+                    .orElse(null);
+            if (loanPayment != null) {
+                var refundData = paymentGateway
+                        .createRefund(loanPayment.getExternalPaymentId(), toPay);
+                registerLoanRefund(loan, refundData);
+                var paymentResponse = new PaymentResponse();
+                paymentResponse.setMessage("Refunded " + toPay + " from early loan");
+                loanService.endLoan(loan.getId().toString());
+                return paymentResponse;
+            }
+        }
+
+
+        // loan is ended on time(no payment) or couldn't find payment to refund
+        var paymentResponse = new PaymentResponse();
+        paymentResponse.setMessage("Returned book in time.");
+        return paymentResponse;
     }
 
     @Transactional
@@ -54,25 +69,49 @@ public class PaymentService {
         switch (paymentType) {
             case LOAN -> {
                 if (data.isSuccess()) {
-                    var loan = loanService.confirmLoan(data.getOperation_id());
-                    var loanPayment = LoanPayment.builder()
-                            .loan(loan)
-                            .createdAt(LocalDateTime.now())
-                            .reason(LoanPaymentReason.INITIAL)
-                            .cost(data.getCost())
-                            .build();
-                    loanPaymentRepository.save(loanPayment);
-                }
-
-                else
-                    loanService.cancelLoan(data.getOperation_id());
+                    var loan = loanService.confirmLoan(data.getOperationId());
+                    registerLoanPayment(loan, LoanPaymentReason.INITIAL, data);
+                } else
+                    loanService.cancelLoan(data.getOperationId());
 
             }
 
-            case ORDER -> {}
+            case PENALITY -> {
+                if (data.isSuccess()) {
+                    var loan = loanService.endLoan(data.getOperationId());
+                    registerLoanPayment(loan, LoanPaymentReason.PENALITY, data);
+                }
+
+            }
+
+            case ORDER -> {
+            }
         }
     }
 
+    private void registerLoanPayment(Loan loan, LoanPaymentReason reason,
+                                     PaymentData paymentData) {
+        var loanPayment = LoanPayment.builder()
+                .loan(loan)
+                .createdAt(LocalDateTime.now())
+                .reason(reason)
+                .cost(paymentData.getCost())
+                .provider(paymentData.getProvider())
+                .externalPaymentId(paymentData.getExternalPaymentId())
+                .build();
+        loanPaymentRepository.save(loanPayment);
+    }
 
+    private void registerLoanRefund(Loan loan, RefundData refundData) {
+        var loanPayment = LoanPayment.builder()
+                .loan(loan)
+                .createdAt(LocalDateTime.now())
+                .reason(LoanPaymentReason.EARLY_RETURN)
+                .cost(refundData.getAmount())
+                .provider(refundData.getProvider())
+                .externalPaymentId(refundData.getRefundId())
+                .build();
+        loanPaymentRepository.save(loanPayment);
+    }
 
 }

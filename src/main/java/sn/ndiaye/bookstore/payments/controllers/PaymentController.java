@@ -13,7 +13,7 @@ import java.util.Map;
 public class PaymentController {
     private PaymentService paymentService;
 
-    @PostMapping("/loan/webhook")
+    @PostMapping("/webhook")
     public void handleWebHook(
             @RequestHeader Map<String, String> headers,
             @RequestBody String payload

@@ -58,7 +58,7 @@ public class UserService {
     }
 
     public Loan getLoan(UUID loanId) {
-        var user =authService.getCurrentUser();
+        var user = authService.getCurrentUser();
         var loan = loanService.getLoan(loanId);
         if (!loan.getUser().equals(user))
             throw new LoanNotFoundException(loanId);

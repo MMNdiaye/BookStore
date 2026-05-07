@@ -42,6 +42,7 @@ public class User {
 
     public boolean hasLoanedBook(Book book) {
         var bookLoanCount = loans.stream()
+                .filter(Loan::isActive)
                 .map(Loan::getBook)
                 .map(Book::getId)
                 .filter(bookId -> bookId.equals(book.getId()))

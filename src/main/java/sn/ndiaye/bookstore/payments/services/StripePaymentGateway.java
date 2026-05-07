@@ -26,7 +26,7 @@ public class StripePaymentGateway implements PaymentGateway {
     public PaymentResponse createCheckout(PaymentRequest request) {
         try {
             var session = Session.create(getParams(request));
-            return new PaymentResponse(session.getUrl());
+            return new PaymentInviteResponse(session.getUrl());
         } catch (StripeException e) {
             System.out.println(e.getMessage());
             throw new PaymentException("Couldn't create stripe session");

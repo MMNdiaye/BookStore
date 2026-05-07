@@ -1,15 +1,8 @@
 package sn.ndiaye.bookstore.payments.dtos;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-@NoArgsConstructor
-@Data
-public class PaymentResponse {
-    private String url;
-    private String message;
 
-    public PaymentResponse(String url) {
-        this.url = url;
-    }
+public interface PaymentResponse {
+
 }

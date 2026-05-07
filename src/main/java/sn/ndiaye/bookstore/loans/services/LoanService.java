@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import sn.ndiaye.bookstore.auth.services.AuthService;
 import sn.ndiaye.bookstore.books.exceptions.EmptyBookStockException;
 import sn.ndiaye.bookstore.books.services.BookService;
-import sn.ndiaye.bookstore.loans.dtos.UpdateLoanRequest;
 import sn.ndiaye.bookstore.loans.entities.LoanStatus;
 import sn.ndiaye.bookstore.loans.exceptions.DuplicateBookLoanException;
 import sn.ndiaye.bookstore.loans.entities.Loan;
@@ -19,7 +18,6 @@ import sn.ndiaye.bookstore.loans.specifications.LoanSpecs;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -75,13 +73,6 @@ public class LoanService {
     public Loan getLoan(UUID loanId) {
         return loanRepository.findById(loanId)
                 .orElseThrow(() -> new LoanNotFoundException(loanId));
-    }
-
-    @Transactional
-    public Loan updateLoan(UUID loanId, UpdateLoanRequest request) {
-        var loan = getLoan(loanId);
-        loanMapper.update(loan, request);
-        return loan;
     }
 
     @Transactional

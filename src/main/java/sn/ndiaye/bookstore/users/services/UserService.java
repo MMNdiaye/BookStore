@@ -14,8 +14,6 @@ import sn.ndiaye.bookstore.users.exceptions.EmailAlreadyTakenException;
 import sn.ndiaye.bookstore.users.dtos.RegisterUserRequest;
 import sn.ndiaye.bookstore.users.exceptions.UserNotFoundException;
 import sn.ndiaye.bookstore.users.repositories.UserRepository;
-
-import java.math.BigDecimal;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -46,7 +44,7 @@ public class UserService {
     public User getUser(UUID id) {
         var authUser = authService.getCurrentUser();
         if (!authUser.isAdmin() && !authUser.getId().equals(id))
-            throw new AccessDeniedException("Denied access to this user");
+            throw new AccessDeniedException("Only admins can access any user");
 
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
@@ -63,10 +61,5 @@ public class UserService {
         if (!loan.getUser().equals(user))
             throw new LoanNotFoundException(loanId);
         return loan;
-    }
-
-    public BigDecimal endsLoan(UUID loanId) {
-        var loan = getLoan(loanId);
-        return loan.processReturnFee();
     }
 }

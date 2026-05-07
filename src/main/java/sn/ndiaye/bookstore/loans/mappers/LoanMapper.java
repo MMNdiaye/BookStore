@@ -1,7 +1,6 @@
 package sn.ndiaye.bookstore.loans.mappers;
 
 import org.mapstruct.*;
-import sn.ndiaye.bookstore.loans.dtos.UpdateLoanRequest;
 import sn.ndiaye.bookstore.loans.entities.Loan;
 import sn.ndiaye.bookstore.loans.dtos.LoanDto;
 import sn.ndiaye.bookstore.users.dtos.UserLoanDto;
@@ -21,6 +20,4 @@ public interface LoanMapper {
 
     Iterable<UserLoanDto> toUserLoanDtos(Iterable<Loan> loans);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void update(@MappingTarget Loan loan, UpdateLoanRequest request);
 }

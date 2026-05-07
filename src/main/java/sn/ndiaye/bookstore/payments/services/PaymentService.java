@@ -46,8 +46,8 @@ public class PaymentService {
                 var refundData = paymentGateway
                         .createRefund(loanPayment.getExternalPaymentId(), toPay);
                 registerLoanRefund(loan, refundData);
-                var paymentResponse = new PaymentResponse();
-                paymentResponse.setMessage("Refunded " + toPay + " from early loan");
+                var paymentResponse =
+                        new PaymentConfirmResponse("You will be refunded" + toPay + " from early return");
                 loanService.endLoan(loan.getId().toString());
                 return paymentResponse;
             }
@@ -55,9 +55,7 @@ public class PaymentService {
 
 
         // loan is ended on time(no payment) or couldn't find payment to refund
-        var paymentResponse = new PaymentResponse();
-        paymentResponse.setMessage("Returned book in time.");
-        return paymentResponse;
+        return new PaymentConfirmResponse("Returned book with success");
     }
 
     @Transactional

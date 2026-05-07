@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,6 @@ import sn.ndiaye.bookstore.auth.config.JwtConfig;
 import sn.ndiaye.bookstore.auth.dtos.JwtResponse;
 import sn.ndiaye.bookstore.auth.dtos.LoginRequest;
 import sn.ndiaye.bookstore.auth.dtos.LoginResponse;
-import sn.ndiaye.bookstore.auth.exceptions.UnauthenticatedUserException;
 import sn.ndiaye.bookstore.users.entities.User;
 import sn.ndiaye.bookstore.users.exceptions.UserNotFoundException;
 import sn.ndiaye.bookstore.users.repositories.UserRepository;
@@ -47,7 +47,7 @@ public class AuthService {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         var id = (UUID) authentication.getPrincipal();
         return userRepository.findById(id)
-                .orElseThrow(UnauthenticatedUserException::new);
+                .orElseThrow(() -> new InsufficientAuthenticationException("Not authenticated"));
     }
 
     public JwtResponse refreshAccess(String refreshToken) {
